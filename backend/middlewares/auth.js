@@ -16,7 +16,8 @@ export const protect = async (req, res, next) => {
 
             const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-            if (!isDbConnected()) {
+            // Handle demo users (ID starts with "demo_")
+            if (!isDbConnected() || (typeof decoded.id === 'string' && decoded.id.startsWith('demo_'))) {
                 req.user = {
                     _id: decoded.id,
                     name: 'Demo User',

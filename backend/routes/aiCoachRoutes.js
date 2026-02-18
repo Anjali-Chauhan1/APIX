@@ -6,6 +6,7 @@ const router = express.Router();
 
 router.post('/chat', protect, chat);
 router.get('/insights', protect, getInsights);
-router.get('/history/:sessionId?', protect, getChatHistory);
+router.get('/history', protect, getChatHistory);
+router.get('/history/:sessionId', protect, getChatHistory);
 
 export default router;

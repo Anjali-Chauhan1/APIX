@@ -33,7 +33,7 @@ const httpServer = createServer(app);
 // Socket.IO setup for real-time projections
 const io = new Server(httpServer, {
     cors: {
-        origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+        origin: '*',
         methods: ['GET', 'POST']
     }
 });
@@ -41,7 +41,7 @@ const io = new Server(httpServer, {
 // Middleware
 app.use(helmet()); // Security headers
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || 'http://localhost:5173',
+    origin: '*',
     credentials: true
 }));
 app.use(express.json());

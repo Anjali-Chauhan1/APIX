@@ -77,14 +77,14 @@ npm install
 3. Create environment file (optional):
 ```bash
 
-VITE_API_URL=http://localhost:5005/api
-VITE_WS_URL=http://localhost:5005
+VITE_API_URL=http://localhost:5000/api
+VITE_WS_URL=http://localhost:5000
 ```
 
 4. Create backend environment file (optional):
 ```bash
 
-PORT=5005
+PORT=5000
 MONGODB_URI=mongodb://localhost:27017/nps-copilot
 JWT_SECRET=your-secret-key
 OPENAI_API_KEY=your-openai-key
@@ -104,7 +104,7 @@ Frontend runs at: http://localhost:5173
 cd frontend
 npm run server:dev
 ```
-Backend runs at: http://localhost:5005
+Backend runs at: http://localhost:5000
 
 ## License
 

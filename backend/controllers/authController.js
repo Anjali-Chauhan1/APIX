@@ -39,10 +39,10 @@ export const register = async (req, res) => {
                 desiredMonthlyPension,
                 preferredLanguage: preferredLanguage || 'en'
             };
-            
+
             demoUsers.set(email, demoUser);
             const token = generateToken(demoUser._id);
-            
+
             return res.status(201).json({
                 success: true,
                 message: 'User registered successfully (Demo Mode)',
@@ -50,7 +50,7 @@ export const register = async (req, res) => {
             });
         }
 
-      
+
         const userExists = await User.findOne({ email });
         if (userExists) {
             return res.status(400).json({
@@ -95,10 +95,11 @@ export const register = async (req, res) => {
             });
         }
     } catch (error) {
-        console.error('Register Error:', error);
+        console.error('Register Error FULL:', error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Error registering user'
+            message: error.message || 'Error registering user',
+            error: error.name // Add error name for easier debugging
         });
     }
 };
@@ -108,11 +109,41 @@ export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
 
-      
+
         if (!email || !password) {
             return res.status(400).json({
                 success: false,
                 message: 'Please provide email and password'
+            });
+        }
+
+      
+        if (!isDbConnected()) {
+            let demoUser = demoUsers.get(email);
+
+            if (!demoUser) {
+                demoUser = {
+                    _id: 'demo_' + Date.now(),
+                    name: email.split('@')[0],
+                    email,
+                    age: 30,
+                    monthlySalary: 50000,
+                    existingSavings: 100000,
+                    monthlyNPSContribution: 5000,
+                    retirementAge: 60,
+                    riskProfile: 'moderate',
+                    expectedSalaryGrowth: 8,
+                    preferredLanguage: 'en'
+                };
+                demoUsers.set(email, demoUser);
+            }
+
+            const token = generateToken(demoUser._id);
+
+            return res.json({
+                success: true,
+                message: 'Login successful (Demo Mode)',
+                data: { ...demoUser, token }
             });
         }
 
