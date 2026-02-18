@@ -30,16 +30,16 @@ const AICoach = ({ isOpen, onClose }) => {
     try {
       const response = await aiCoachAPI.chat(input);
       if (response.data.success) {
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: response.data.data.message 
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: response.data.data.message
         }]);
       }
     } catch (error) {
       console.error("AI Chat Error:", error);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: "I'm having trouble connecting right now. Let's try again in a bit!" 
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: "I'm having trouble connecting right now. Let's try again in a bit!"
       }]);
     } finally {
       setLoading(false);
@@ -68,7 +68,7 @@ const AICoach = ({ isOpen, onClose }) => {
             className="fixed right-0 top-0 bottom-0 w-full max-w-md bg-white shadow-2xl z-[70] flex flex-col"
           >
             {/* Header */}
-            <div className="p-6 border-b border-gray-100 flex justify-between items-center bg-primary-600 text-white">
+            <div className="p-4 sm:p-6 border-b border-gray-100 flex justify-between items-center bg-primary-600 text-white">
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-white/20 rounded-xl">
                   <Sparkles className="w-5 h-5 text-white" />
@@ -78,7 +78,7 @@ const AICoach = ({ isOpen, onClose }) => {
                   <p className="text-primary-100 text-xs font-medium">AI powered advisor</p>
                 </div>
               </div>
-              <button 
+              <button
                 onClick={onClose}
                 className="p-2 hover:bg-white/10 rounded-full transition-colors"
               >
@@ -87,13 +87,13 @@ const AICoach = ({ isOpen, onClose }) => {
             </div>
 
             {/* Chat Area */}
-            <div 
+            <div
               ref={scrollRef}
-              className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide"
+              className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6 scrollbar-hide"
             >
               {messages.map((msg, i) => (
-                <div 
-                  key={i} 
+                <div
+                  key={i}
                   className={cn(
                     "flex gap-3 max-w-[85%]",
                     msg.role === 'user' ? "ml-auto flex-row-reverse" : "mr-auto"
@@ -107,8 +107,8 @@ const AICoach = ({ isOpen, onClose }) => {
                   </div>
                   <div className={cn(
                     "p-4 rounded-2xl text-sm leading-relaxed",
-                    msg.role === 'user' 
-                      ? "bg-primary-600 text-white rounded-tr-none" 
+                    msg.role === 'user'
+                      ? "bg-primary-600 text-white rounded-tr-none"
                       : "bg-gray-100 text-gray-800 rounded-tl-none"
                   )}>
                     {msg.content}
@@ -132,7 +132,7 @@ const AICoach = ({ isOpen, onClose }) => {
             </div>
 
             {/* Input Area */}
-            <div className="p-6 border-t border-gray-100">
+            <div className="p-4 sm:p-6 border-t border-gray-100">
               <div className="relative flex items-center gap-3">
                 <div className="relative flex-1">
                   <input
@@ -147,7 +147,7 @@ const AICoach = ({ isOpen, onClose }) => {
                     <Mic className="w-5 h-5" />
                   </button>
                 </div>
-                <button 
+                <button
                   onClick={handleSend}
                   disabled={!input.trim() || loading}
                   className="bg-primary-600 text-white p-4 rounded-2xl hover:bg-primary-700 disabled:bg-gray-200 transition-colors shadow-lg shadow-primary-200"

@@ -1,11 +1,11 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
+import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, LineChart, Line, Legend
 } from 'recharts';
-import { 
+import {
   TrendingUp, Wallet, ShieldCheck, AlertCircle, AlertTriangle,
   MessageSquare, Settings, Users, ArrowUpRight, Target, Zap,
   Clock, ChevronRight, Info, Calendar, Heart,
@@ -16,6 +16,7 @@ import Card from '../components/Card';
 import AICoach from '../components/AICoach';
 import Button from '../components/Button';
 import Slider from '../components/Slider';
+import ExportDropdown from '../components/ExportDropdown';
 import { useAuthStore } from '../store/authStore';
 import { useProjectionStore } from '../store/projectionStore';
 import { projectionAPI, aiCoachAPI, getSocket } from '../services/api';
@@ -28,7 +29,7 @@ const Dashboard = () => {
   const [insights, setInsights] = useState([]);
   const [showAI, setShowAI] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
-  
+
   // Extended state for all features
   const [realityShock, setRealityShock] = useState(null);
   const [contributionGap, setContributionGap] = useState(null);
@@ -63,7 +64,7 @@ const Dashboard = () => {
   // WebSocket connection for real-time updates
   useEffect(() => {
     const socket = getSocket();
-    
+
     socket.on('projection-result', (result) => {
       if (result.success) {
         setProjection(result.data.projection);
@@ -185,7 +186,7 @@ const Dashboard = () => {
   // Rupee icon component
   const IndianRupee = ({ className }) => (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M6 3h12M6 8h12M6 13l8.5 8M6 13h3c4.5 0 4.5-5 0-5H6"/>
+      <path d="M6 3h12M6 8h12M6 13l8.5 8M6 13h3c4.5 0 4.5-5 0-5H6" />
     </svg>
   );
 
@@ -226,39 +227,35 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50 pb-20">
       {/* Header */}
       <nav className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-primary-600 to-primary-700 p-2.5 rounded-xl shadow-lg shadow-primary-200">
-                <ShieldCheck className="text-white w-6 h-6" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-14 sm:h-16 items-center">
+            <div className="flex items-center gap-2">
+              <div className="bg-gradient-to-br from-primary-600 to-primary-700 p-2 sm:p-2.5 rounded-xl shadow-lg shadow-primary-200">
+                <ShieldCheck className="text-white w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <span className="font-bold text-xl tracking-tight bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">NPS Copilot</span>
-                <span className="text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full ml-2">BETA</span>
+                <span className="font-bold text-base sm:text-xl tracking-tight bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">NPS Copilot</span>
+                <span className="hidden xs:inline text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full ml-2">BETA</span>
               </div>
             </div>
-            <div className="flex items-center gap-4">
-              <button 
+            <div className="flex items-center gap-2 sm:gap-3">
+              <button
                 onClick={() => setShowAI(true)}
-                className="p-2.5 text-gray-500 hover:text-primary-600 transition-colors relative bg-gray-50 rounded-xl hover:bg-primary-50"
+                className="p-2 sm:p-2.5 text-gray-500 hover:text-primary-600 transition-colors relative bg-gray-50 rounded-xl hover:bg-primary-50"
               >
-                <MessageSquare className="w-5 h-5" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
               </button>
-              <Link 
-                to="/profile"
-                className="p-2.5 text-gray-500 hover:text-primary-600 transition-colors bg-gray-50 rounded-xl hover:bg-primary-50"
-              >
-                <User className="w-5 h-5" />
-              </Link>
-              <button 
+              {/* Export & Share */}
+              <ExportDropdown />
+              <button
                 onClick={handleLogout}
-                className="p-2.5 text-gray-500 hover:text-red-600 transition-colors bg-gray-50 rounded-xl hover:bg-red-50"
+                className="hidden xs:flex p-2 sm:p-2.5 text-gray-500 hover:text-red-600 transition-colors bg-gray-50 rounded-xl hover:bg-red-50"
                 title="Logout"
               >
-                <LogOut className="w-5 h-5" />
+                <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
               </button>
-              <Link to="/profile" className="h-10 w-10 bg-gradient-to-br from-primary-500 to-primary-700 text-white rounded-xl flex items-center justify-center font-bold shadow-lg shadow-primary-200 hover:shadow-xl transition-shadow">
+              <Link to="/profile" className="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-br from-primary-500 to-primary-700 text-white rounded-xl flex items-center justify-center font-bold text-sm shadow-lg shadow-primary-200 hover:shadow-xl transition-shadow">
                 {user?.name?.charAt(0) || 'U'}
               </Link>
             </div>
@@ -267,26 +264,26 @@ const Dashboard = () => {
       </nav>
 
       {/* Hero Stats Section */}
-      <div className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white py-8 px-4">
+      <div className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white py-5 sm:py-8 px-3 sm:px-4">
         <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
             <div>
-              <p className="text-primary-200 text-sm font-medium mb-1">Welcome back, {user?.name || 'Investor'}</p>
-              <h1 className="text-3xl font-bold">Your Retirement Roadmap</h1>
-              <p className="text-primary-100 mt-2">You are <span className="text-white font-bold">{results.retirementReadinessScore}%</span> ready for retirement</p>
+              <p className="text-primary-200 text-xs sm:text-sm font-medium mb-1">Welcome back, {user?.name || 'Investor'}</p>
+              <h1 className="text-xl xs:text-2xl sm:text-3xl font-bold">Your Retirement Roadmap</h1>
+              <p className="text-primary-100 mt-1 text-sm">You are <span className="text-white font-bold">{results.retirementReadinessScore}%</span> ready for retirement</p>
             </div>
-            <div className="flex gap-4 flex-wrap">
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 min-w-[140px]">
-                <p className="text-primary-200 text-xs font-medium mb-1">Expected Corpus</p>
-                <p className="text-2xl font-bold">{formatCurrency(results.totalCorpus, true)}</p>
+            <div className="grid grid-cols-3 gap-2 xs:gap-3 w-full md:w-auto md:flex md:flex-wrap">
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl xs:rounded-2xl p-2.5 xs:p-3 sm:p-4">
+                <p className="text-primary-200 text-[10px] xs:text-xs font-medium mb-0.5">Corpus</p>
+                <p className="text-sm xs:text-base sm:text-2xl font-bold truncate">{formatCurrency(results.totalCorpus, true)}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 min-w-[140px]">
-                <p className="text-primary-200 text-xs font-medium mb-1">Monthly Pension</p>
-                <p className="text-2xl font-bold">{formatCurrency(results.monthlyPension)}</p>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl xs:rounded-2xl p-2.5 xs:p-3 sm:p-4">
+                <p className="text-primary-200 text-[10px] xs:text-xs font-medium mb-0.5">Pension/mo</p>
+                <p className="text-sm xs:text-base sm:text-2xl font-bold truncate">{formatCurrency(results.monthlyPension)}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-4 min-w-[140px]">
-                <p className="text-primary-200 text-xs font-medium mb-1">Years to Go</p>
-                <p className="text-2xl font-bold">{results.yearsToRetirement} Years</p>
+              <div className="bg-white/10 backdrop-blur-sm rounded-xl xs:rounded-2xl p-2.5 xs:p-3 sm:p-4">
+                <p className="text-primary-200 text-[10px] xs:text-xs font-medium mb-0.5">Years Left</p>
+                <p className="text-sm xs:text-base sm:text-2xl font-bold">{results.yearsToRetirement} Yrs</p>
               </div>
             </div>
           </div>
@@ -309,8 +306,8 @@ const Dashboard = () => {
               onClick={() => setActiveTab(tab.id)}
               className={cn(
                 "flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all",
-                activeTab === tab.id 
-                  ? "bg-primary-600 text-white shadow-lg shadow-primary-200" 
+                activeTab === tab.id
+                  ? "bg-primary-600 text-white shadow-lg shadow-primary-200"
                   : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-100"
               )}
             >
@@ -322,10 +319,10 @@ const Dashboard = () => {
       </div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        
+
         <AnimatePresence mode="wait">
           {activeTab === 'overview' && (
-            <motion.div 
+            <motion.div
               key="overview"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -334,7 +331,7 @@ const Dashboard = () => {
             >
               {/* Left Column */}
               <div className="lg:col-span-8 space-y-6">
-                
+
                 {/* Wealth Growth Chart */}
                 <Card className="overflow-hidden">
                   <div className="flex justify-between items-center mb-6">
@@ -358,24 +355,24 @@ const Dashboard = () => {
                       <AreaChart data={yearlyBreakdown}>
                         <defs>
                           <linearGradient id="colorCorpus" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2}/>
-                            <stop offset="95%" stopColor="#2563EB" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2} />
+                            <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                        <XAxis 
-                          dataKey="age" 
-                          axisLine={false} 
-                          tickLine={false} 
-                          tick={{ fontSize: 11, fill: '#9CA3AF' }}
-                        />
-                        <YAxis 
+                        <XAxis
+                          dataKey="age"
                           axisLine={false}
                           tickLine={false}
                           tick={{ fontSize: 11, fill: '#9CA3AF' }}
-                          tickFormatter={(value) => `₹${(value/100000).toFixed(0)}L`}
                         />
-                        <Tooltip 
+                        <YAxis
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 11, fill: '#9CA3AF' }}
+                          tickFormatter={(value) => `₹${(value / 100000).toFixed(0)}L`}
+                        />
+                        <Tooltip
                           content={({ active, payload }) => {
                             if (active && payload && payload.length) {
                               return (
@@ -389,13 +386,13 @@ const Dashboard = () => {
                             return null;
                           }}
                         />
-                        <Area 
-                          type="monotone" 
-                          dataKey="corpusValue" 
-                          stroke="#2563EB" 
+                        <Area
+                          type="monotone"
+                          dataKey="corpusValue"
+                          stroke="#2563EB"
                           strokeWidth={3}
-                          fillOpacity={1} 
-                          fill="url(#colorCorpus)" 
+                          fillOpacity={1}
+                          fill="url(#colorCorpus)"
                         />
                       </AreaChart>
                     </ResponsiveContainer>
@@ -404,13 +401,13 @@ const Dashboard = () => {
 
                 {/* Reality Shock + Contribution Gap Row */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  
+
                   {/* Reality Shock Meter 🚨 */}
                   <Card className={cn(
                     "relative overflow-hidden",
                     realityShock?.riskLevel === 'high' ? "bg-gradient-to-br from-red-600 to-red-800" :
-                    realityShock?.riskLevel === 'moderate' ? "bg-gradient-to-br from-orange-500 to-orange-700" :
-                    "bg-gradient-to-br from-green-600 to-green-800",
+                      realityShock?.riskLevel === 'moderate' ? "bg-gradient-to-br from-orange-500 to-orange-700" :
+                        "bg-gradient-to-br from-green-600 to-green-800",
                     "text-white border-0"
                   )}>
                     <div className="absolute top-0 right-0 opacity-10">
@@ -428,7 +425,7 @@ const Dashboard = () => {
                       <div className={cn(
                         "w-3 h-3 rounded-full animate-pulse",
                         realityShock?.riskLevel === 'high' ? "bg-red-300" :
-                        realityShock?.riskLevel === 'moderate' ? "bg-orange-300" : "bg-green-300"
+                          realityShock?.riskLevel === 'moderate' ? "bg-orange-300" : "bg-green-300"
                       )}></div>
                       <span className="text-sm font-bold uppercase">{realityShock?.riskLevel} Risk</span>
                     </div>
@@ -440,7 +437,7 @@ const Dashboard = () => {
                       <TrendingDown className="w-5 h-5 text-primary-600" />
                       <Card.Title className="text-base">Contribution Gap Detector</Card.Title>
                     </div>
-                    
+
                     {contributionGap && (
                       <>
                         <div className={cn(
@@ -499,7 +496,7 @@ const Dashboard = () => {
 
               {/* Right Column */}
               <div className="lg:col-span-4 space-y-6">
-                
+
                 {/* Readiness Score Gauge */}
                 <Card className="text-center flex flex-col items-center">
                   <Card.Title className="mb-6">Retirement Readiness</Card.Title>
@@ -549,48 +546,48 @@ const Dashboard = () => {
                     <Settings className="w-5 h-5 text-primary-600" />
                     <Card.Title>Decision Playground</Card.Title>
                   </div>
-                  
+
                   <div className="space-y-5">
-                    <Slider 
-                      label="Monthly Contribution" 
-                      value={params.monthlyNPSContribution} 
-                      min={1000} 
-                      max={100000} 
+                    <Slider
+                      label="Monthly Contribution"
+                      value={params.monthlyNPSContribution}
+                      min={1000}
+                      max={100000}
                       step={500}
                       prefix="₹"
-                      onChange={(val) => setParams({...params, monthlyNPSContribution: val})}
+                      onChange={(val) => setParams({ ...params, monthlyNPSContribution: val })}
                     />
-                    <Slider 
-                      label="Retirement Age" 
-                      value={params.retirementAge} 
-                      min={40} 
-                      max={70} 
+                    <Slider
+                      label="Retirement Age"
+                      value={params.retirementAge}
+                      min={40}
+                      max={70}
                       suffix=" Yrs"
-                      onChange={(val) => setParams({...params, retirementAge: val})}
+                      onChange={(val) => setParams({ ...params, retirementAge: val })}
                     />
-                    <Slider 
-                      label="Salary Growth" 
-                      value={params.expectedSalaryGrowth} 
-                      min={0} 
-                      max={20} 
+                    <Slider
+                      label="Salary Growth"
+                      value={params.expectedSalaryGrowth}
+                      min={0}
+                      max={20}
                       suffix="% p.a."
-                      onChange={(val) => setParams({...params, expectedSalaryGrowth: val})}
+                      onChange={(val) => setParams({ ...params, expectedSalaryGrowth: val })}
                     />
-                    <Slider 
-                      label="Inflation Rate" 
-                      value={params.inflationRate} 
-                      min={3} 
-                      max={10} 
+                    <Slider
+                      label="Inflation Rate"
+                      value={params.inflationRate}
+                      min={3}
+                      max={10}
                       suffix="% p.a."
-                      onChange={(val) => setParams({...params, inflationRate: val})}
+                      onChange={(val) => setParams({ ...params, inflationRate: val })}
                     />
-                    <Slider 
-                      label="Annuity Purchase" 
-                      value={params.annuityPercentage} 
-                      min={40} 
-                      max={100} 
+                    <Slider
+                      label="Annuity Purchase"
+                      value={params.annuityPercentage}
+                      min={40}
+                      max={100}
                       suffix="%"
-                      onChange={(val) => setParams({...params, annuityPercentage: val})}
+                      onChange={(val) => setParams({ ...params, annuityPercentage: val })}
                     />
                   </div>
 
@@ -608,15 +605,15 @@ const Dashboard = () => {
 
                 {/* Quick Actions */}
                 <div className="grid grid-cols-2 gap-3">
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex flex-col items-center gap-2 py-4 h-auto"
                     onClick={() => setActiveTab('scenarios')}
                   >
                     <Target className="w-5 h-5 text-primary-600" />
                     <span className="text-xs">Scenarios</span>
                   </Button>
-                  <Button 
+                  <Button
                     variant="outline"
                     className="flex flex-col items-center gap-2 py-4 h-auto"
                     onClick={() => setActiveTab('montecarlo')}
@@ -658,14 +655,14 @@ const Dashboard = () => {
 
           {/* Pension Simulator Tab */}
           {activeTab === 'simulator' && (
-            <motion.div 
+            <motion.div
               key="simulator"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <PensionSimulatorSection 
-                corpus={results.totalCorpus} 
+              <PensionSimulatorSection
+                corpus={results.totalCorpus}
                 pensionSimulation={pensionSimulation}
                 params={params}
                 setParams={setParams}
@@ -675,7 +672,7 @@ const Dashboard = () => {
 
           {/* Monte Carlo Tab */}
           {activeTab === 'montecarlo' && (
-            <motion.div 
+            <motion.div
               key="montecarlo"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -687,7 +684,7 @@ const Dashboard = () => {
 
           {/* Timeline Tab */}
           {activeTab === 'timeline' && (
-            <motion.div 
+            <motion.div
               key="timeline"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -699,14 +696,14 @@ const Dashboard = () => {
 
           {/* Family Protection Tab */}
           {activeTab === 'protection' && (
-            <motion.div 
+            <motion.div
               key="protection"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
             >
-              <FamilyProtectionSection 
-                data={familyProtection} 
+              <FamilyProtectionSection
+                data={familyProtection}
                 params={params}
                 setParams={setParams}
                 onRecalculate={async (stopAge) => {
@@ -725,7 +722,7 @@ const Dashboard = () => {
 
           {/* Scenarios Tab */}
           {activeTab === 'scenarios' && (
-            <motion.div 
+            <motion.div
               key="scenarios"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -763,16 +760,16 @@ const PensionSimulatorSection = ({ corpus, pensionSimulation, params, setParams 
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <h2 className="text-2xl font-bold mb-2">NPS Pension Simulator</h2>
-        <p className="text-gray-500 mb-6">See how different annuity percentages affect your monthly pension</p>
+      <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+        <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">NPS Pension Simulator</h2>
+        <p className="text-gray-500 text-sm mb-4 sm:mb-6">See how different annuity percentages affect your monthly pension</p>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
           {/* Annuity Slider */}
           <div>
-            <div className="bg-primary-50 rounded-2xl p-6 mb-6">
-              <p className="text-sm font-medium text-primary-600 mb-2">Your Estimated Corpus</p>
-              <p className="text-3xl font-bold text-primary-800">{formatCurrency(corpus)}</p>
+            <div className="bg-primary-50 rounded-2xl p-4 sm:p-6 mb-4 sm:mb-6">
+              <p className="text-sm font-medium text-primary-600 mb-1">Your Estimated Corpus</p>
+              <p className="text-2xl sm:text-3xl font-bold text-primary-800">{formatCurrency(corpus)}</p>
             </div>
 
             <div className="space-y-6">
@@ -807,9 +804,9 @@ const PensionSimulatorSection = ({ corpus, pensionSimulation, params, setParams 
           <div className="space-y-4">
             {selectedOption && (
               <>
-                <div className="bg-gradient-to-br from-green-500 to-green-700 text-white rounded-2xl p-6">
+                <div className="bg-gradient-to-br from-green-500 to-green-700 text-white rounded-2xl p-4 sm:p-6">
                   <p className="text-green-100 text-sm font-medium mb-1">Monthly Pension</p>
-                  <p className="text-4xl font-bold">{formatCurrency(selectedOption.monthlyPension)}</p>
+                  <p className="text-3xl sm:text-4xl font-bold">{formatCurrency(selectedOption.monthlyPension)}</p>
                   <p className="text-green-200 text-sm mt-2">₹{(selectedOption.monthlyPension * 12).toLocaleString('en-IN')}/year</p>
                 </div>
 
@@ -847,8 +844,8 @@ const PensionSimulatorSection = ({ corpus, pensionSimulation, params, setParams 
               </thead>
               <tbody>
                 {pensionSimulation?.map((option, i) => (
-                  <tr 
-                    key={i} 
+                  <tr
+                    key={i}
                     className={cn(
                       "border-b border-gray-100 hover:bg-gray-50 cursor-pointer transition-colors",
                       option.annuityPercentage === selectedAnnuity && "bg-primary-50"
@@ -893,14 +890,14 @@ const MonteCarloSection = ({ results }) => {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center justify-between mb-6">
+      <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+        <div className="flex flex-wrap items-start justify-between gap-3 mb-4 sm:mb-6">
           <div>
-            <h2 className="text-2xl font-bold">Monte Carlo Simulation</h2>
-            <p className="text-gray-500">1,000 market scenarios analyzed</p>
+            <h2 className="text-xl sm:text-2xl font-bold">Monte Carlo Simulation</h2>
+            <p className="text-gray-500 text-sm">1,000 market scenarios analyzed</p>
           </div>
-          <div className="bg-primary-50 px-4 py-2 rounded-xl">
-            <span className="text-sm font-medium text-primary-600">
+          <div className="bg-primary-50 px-3 py-1.5 rounded-xl">
+            <span className="text-xs sm:text-sm font-medium text-primary-600">
               {results.totalSimulations.toLocaleString()} simulations
             </span>
           </div>
@@ -912,21 +909,21 @@ const MonteCarloSection = ({ results }) => {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
-                <XAxis 
-                  type="number" 
-                  tickFormatter={(value) => `₹${(value/10000000).toFixed(1)}Cr`}
+                <XAxis
+                  type="number"
+                  tickFormatter={(value) => `₹${(value / 10000000).toFixed(1)}Cr`}
                   axisLine={false}
                   tickLine={false}
                 />
-                <YAxis 
-                  type="category" 
-                  dataKey="name" 
-                  width={120}
+                <YAxis
+                  type="category"
+                  dataKey="name"
+                  width={80}
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12 }}
                 />
-                <Tooltip 
+                <Tooltip
                   formatter={(value) => formatCurrency(value)}
                   contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
                 />
@@ -943,7 +940,7 @@ const MonteCarloSection = ({ results }) => {
           <div className="space-y-4">
             <div className="grid grid-cols-1 gap-3">
               {Object.entries(results.scenarios).map(([key, value], i) => (
-                <div 
+                <div
                   key={key}
                   className={cn(
                     "p-4 rounded-xl border",
@@ -968,7 +965,7 @@ const MonteCarloSection = ({ results }) => {
         </div>
 
         {/* Statistics */}
-        <div className="mt-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="mt-6 sm:mt-8 grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
           <div className="bg-gray-50 rounded-xl p-4 text-center">
             <p className="text-xs text-gray-500 font-medium mb-1">Average</p>
             <p className="text-lg font-bold">{formatCurrency(results.statistics.mean, true)}</p>
@@ -996,9 +993,9 @@ const TimelineSection = ({ timeline }) => {
   if (!timeline) return null;
 
   return (
-    <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-      <h2 className="text-2xl font-bold mb-2">Your Retirement Timeline</h2>
-      <p className="text-gray-500 mb-8">A narrative journey of your financial future</p>
+    <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+      <h2 className="text-xl sm:text-2xl font-bold mb-1 sm:mb-2">Your Retirement Timeline</h2>
+      <p className="text-gray-500 text-sm mb-6 sm:mb-8">A narrative journey of your financial future</p>
 
       <div className="relative">
         {/* Timeline line */}
@@ -1017,9 +1014,9 @@ const TimelineSection = ({ timeline }) => {
               <div className={cn(
                 "w-12 h-12 rounded-full flex items-center justify-center text-2xl z-10 shadow-lg",
                 milestone.type === 'start' ? "bg-primary-100" :
-                milestone.type === 'milestone' ? "bg-amber-100" :
-                milestone.type === 'warning' ? "bg-orange-100" :
-                milestone.type === 'end' ? "bg-green-100" : "bg-gray-100"
+                  milestone.type === 'milestone' ? "bg-amber-100" :
+                    milestone.type === 'warning' ? "bg-orange-100" :
+                      milestone.type === 'end' ? "bg-green-100" : "bg-gray-100"
               )}>
                 {milestone.icon}
               </div>
@@ -1028,9 +1025,9 @@ const TimelineSection = ({ timeline }) => {
               <div className={cn(
                 "flex-1 p-5 rounded-2xl",
                 milestone.type === 'start' ? "bg-primary-50 border border-primary-100" :
-                milestone.type === 'milestone' ? "bg-amber-50 border border-amber-100" :
-                milestone.type === 'warning' ? "bg-orange-50 border border-orange-100" :
-                milestone.type === 'end' ? "bg-green-50 border border-green-100" : "bg-gray-50 border border-gray-100"
+                  milestone.type === 'milestone' ? "bg-amber-50 border border-amber-100" :
+                    milestone.type === 'warning' ? "bg-orange-50 border border-orange-100" :
+                      milestone.type === 'end' ? "bg-green-50 border border-green-100" : "bg-gray-50 border border-gray-100"
               )}>
                 <div className="flex flex-col sm:flex-row justify-between items-start gap-2 mb-2">
                   <h3 className="font-bold text-gray-800">{milestone.title}</h3>
@@ -1075,19 +1072,19 @@ const FamilyProtectionSection = ({ data, params, setParams, onRecalculate }) => 
 
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="p-3 bg-red-100 rounded-xl">
-            <Heart className="w-6 h-6 text-red-600" />
+      <div className="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-gray-100">
+        <div className="flex items-center gap-3 mb-4 sm:mb-6">
+          <div className="p-2.5 bg-red-100 rounded-xl flex-shrink-0">
+            <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-red-600" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold">Family Protection Mode</h2>
-            <p className="text-gray-500">What if you stop contributing today?</p>
+            <h2 className="text-xl sm:text-2xl font-bold">Family Protection Mode</h2>
+            <p className="text-gray-500 text-sm">What if you stop contributing today?</p>
           </div>
         </div>
 
-        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-6 mb-8">
-          <p className="text-lg text-gray-800 font-medium">{data.message}</p>
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 rounded-xl p-4 sm:p-6 mb-6 sm:mb-8">
+          <p className="text-sm sm:text-lg text-gray-800 font-medium">{data.message}</p>
         </div>
 
         <div className="mb-8">
@@ -1150,8 +1147,8 @@ const FamilyProtectionSection = ({ data, params, setParams, onRecalculate }) => 
               <BarChart data={chartData}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} />
                 <XAxis dataKey="type" axisLine={false} tickLine={false} />
-                <YAxis 
-                  tickFormatter={(value) => `₹${(value/10000000).toFixed(1)}Cr`}
+                <YAxis
+                  tickFormatter={(value) => `₹${(value / 10000000).toFixed(1)}Cr`}
                   axisLine={false}
                   tickLine={false}
                 />
@@ -1163,18 +1160,18 @@ const FamilyProtectionSection = ({ data, params, setParams, onRecalculate }) => 
         </div>
 
         {/* Impact Summary */}
-        <div className="mt-8 grid grid-cols-3 gap-4">
-          <div className="bg-gray-50 rounded-xl p-4 text-center">
-            <p className="text-xs text-gray-500 font-medium mb-1">Corpus Reduction</p>
-            <p className="text-xl font-bold text-red-600">-{formatCurrency(data.impact.corpusReduction, true)}</p>
+        <div className="mt-6 sm:mt-8 grid grid-cols-3 gap-2 sm:gap-4">
+          <div className="bg-gray-50 rounded-xl p-3 sm:p-4 text-center">
+            <p className="text-[10px] xs:text-xs text-gray-500 font-medium mb-1">Corpus Loss</p>
+            <p className="text-sm xs:text-base sm:text-xl font-bold text-red-600">-{formatCurrency(data.impact.corpusReduction, true)}</p>
           </div>
-          <div className="bg-gray-50 rounded-xl p-4 text-center">
-            <p className="text-xs text-gray-500 font-medium mb-1">Pension Reduction</p>
-            <p className="text-xl font-bold text-red-600">-{formatCurrency(data.impact.pensionReduction)}/mo</p>
+          <div className="bg-gray-50 rounded-xl p-3 sm:p-4 text-center">
+            <p className="text-[10px] xs:text-xs text-gray-500 font-medium mb-1">Pension Loss</p>
+            <p className="text-sm xs:text-base sm:text-xl font-bold text-red-600">-{formatCurrency(data.impact.pensionReduction)}/mo</p>
           </div>
-          <div className="bg-gray-50 rounded-xl p-4 text-center">
-            <p className="text-xs text-gray-500 font-medium mb-1">Total Loss</p>
-            <p className="text-xl font-bold text-red-600">{data.impact.reductionPercent}%</p>
+          <div className="bg-gray-50 rounded-xl p-3 sm:p-4 text-center">
+            <p className="text-[10px] xs:text-xs text-gray-500 font-medium mb-1">Total Loss</p>
+            <p className="text-sm xs:text-base sm:text-xl font-bold text-red-600">{data.impact.reductionPercent}%</p>
           </div>
         </div>
       </div>
@@ -1221,16 +1218,16 @@ const ScenariosQuickView = () => {
 
   return (
     <div className="space-y-6">
-      <div className="text-center mb-8">
-        <h2 className="text-2xl font-bold">Scenario Comparison</h2>
-        <p className="text-gray-500">Compare different investment strategies side by side</p>
+      <div className="text-center mb-6 sm:mb-8">
+        <h2 className="text-xl sm:text-2xl font-bold">Scenario Comparison</h2>
+        <p className="text-gray-500 text-sm">Compare different investment strategies side by side</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6">
         {scenarios.map((scenario, index) => {
           const Icon = icons[index] || Target;
           return (
-            <Card 
+            <Card
               key={index}
               className={cn(
                 "text-center h-full relative",
@@ -1246,8 +1243,8 @@ const ScenariosQuickView = () => {
               <div className={cn(
                 "w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4",
                 index === 0 ? "bg-red-100 text-red-600" :
-                index === 1 ? "bg-primary-100 text-primary-600" :
-                "bg-green-100 text-green-600"
+                  index === 1 ? "bg-primary-100 text-primary-600" :
+                    "bg-green-100 text-green-600"
               )}>
                 <Icon className="w-7 h-7" />
               </div>

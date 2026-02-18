@@ -36,21 +36,21 @@ const Scenarios = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        <button 
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-6 sm:pt-8">
+        <button
           onClick={() => window.location.href = '/dashboard'}
-          className="flex items-center gap-2 text-gray-500 hover:text-primary-600 transition-colors mb-8 font-semibold"
+          className="flex items-center gap-2 text-gray-500 hover:text-primary-600 transition-colors mb-6 sm:mb-8 font-semibold text-sm sm:text-base"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
           Back to Dashboard
         </button>
 
-        <header className="mb-12">
-          <h1 className="text-4xl font-black text-gray-900 mb-2">Scenario Comparison</h1>
-          <p className="text-gray-500 text-lg">See how different investment strategies affect your retirement life.</p>
+        <header className="mb-8 sm:mb-12">
+          <h1 className="text-2xl xs:text-3xl sm:text-4xl font-black text-gray-900 mb-2">Scenario Comparison</h1>
+          <p className="text-gray-500 text-sm sm:text-lg">See how different investment strategies affect your retirement life.</p>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 sm:gap-8">
           {scenarios.map((scenario, index) => (
             <motion.div
               key={index}
@@ -67,16 +67,16 @@ const Scenarios = () => {
                     Recommended
                   </div>
                 )}
-                
+
                 <div className={cn(
                   "p-4 rounded-3xl mb-6 shadow-sm",
-                  index === 0 ? "bg-red-50 text-red-600" : 
-                  index === 1 ? "bg-primary-50 text-primary-600" : 
-                  "bg-success-50 text-success-600"
+                  index === 0 ? "bg-red-50 text-red-600" :
+                    index === 1 ? "bg-primary-50 text-primary-600" :
+                      "bg-success-50 text-success-600"
                 )}>
-                  {index === 0 ? <Clock className="w-8 h-8" /> : 
-                   index === 1 ? <Target className="w-8 h-8" /> : 
-                   <Zap className="w-8 h-8" />}
+                  {index === 0 ? <Clock className="w-8 h-8" /> :
+                    index === 1 ? <Target className="w-8 h-8" /> :
+                      <Zap className="w-8 h-8" />}
                 </div>
 
                 <h3 className="text-2xl font-black mb-2">{scenario.name}</h3>
@@ -96,7 +96,7 @@ const Scenarios = () => {
                 <div className="mt-auto w-full pt-8 border-t border-gray-100 italic">
                   <div className="mb-2">
                     <span className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1">Expected Corpus</span>
-                    <span className="text-3xl font-black text-primary-600">{formatCurrency(scenario.projection.results.totalCorpus, true)}</span>
+                    <span className="text-2xl sm:text-3xl font-black text-primary-600">{formatCurrency(scenario.projection.results.totalCorpus, true)}</span>
                   </div>
                   <div>
                     <span className="text-xs font-black text-gray-400 uppercase tracking-widest block mb-1">Monthly Pension</span>
@@ -104,7 +104,7 @@ const Scenarios = () => {
                   </div>
                 </div>
 
-                <Button 
+                <Button
                   variant={scenario.name === 'Smart Investor' ? 'primary' : 'outline'}
                   className="w-full mt-10"
                 >

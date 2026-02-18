@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { 
-  User, Mail, Calendar, Wallet, PiggyBank, Target, 
+import {
+  User, Mail, Calendar, Wallet, PiggyBank, Target,
   Shield, TrendingUp, ArrowLeft, Save, Edit2, Check, LogOut,
   Home, BarChart2, Settings
 } from 'lucide-react';
@@ -19,7 +19,7 @@ const Profile = () => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [isEditing, setIsEditing] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -98,28 +98,28 @@ const Profile = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Navigation */}
       <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary-100 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-primary-600" />
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-14 sm:h-16">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 rounded-xl flex items-center justify-center">
+                <TrendingUp className="w-5 h-5 text-primary-600" />
               </div>
-              <h1 className="text-xl font-bold text-gray-900">NPS Retirement Copilot</h1>
+              <h1 className="text-base sm:text-xl font-bold text-gray-900">NPS Retirement Copilot</h1>
             </div>
-            <div className="flex items-center gap-4">
-              <Link 
-                to="/dashboard" 
-                className="flex items-center gap-2 text-gray-600 hover:text-primary-600 transition-colors"
+            <div className="flex items-center gap-3">
+              <Link
+                to="/dashboard"
+                className="flex items-center gap-1.5 text-gray-600 hover:text-primary-600 transition-colors text-sm"
               >
-                <Home className="w-5 h-5" />
-                <span className="hidden sm:inline">Dashboard</span>
+                <Home className="w-4 h-4" />
+                <span className="hidden xs:inline">Dashboard</span>
               </Link>
-              <button 
+              <button
                 onClick={handleLogout}
-                className="flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
+                className="flex items-center gap-1.5 text-gray-600 hover:text-red-600 transition-colors text-sm"
               >
-                <LogOut className="w-5 h-5" />
-                <span className="hidden sm:inline">Logout</span>
+                <LogOut className="w-4 h-4" />
+                <span className="hidden xs:inline">Logout</span>
               </button>
             </div>
           </div>
@@ -193,18 +193,18 @@ const Profile = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-6 mb-8 text-white"
+          className="bg-gradient-to-r from-primary-600 to-primary-700 rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 text-white"
         >
-          <div className="flex items-center gap-4 mb-4">
-            <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center">
-              <User className="w-8 h-8" />
+          <div className="flex items-center gap-3 sm:gap-4 mb-4">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-white/20 rounded-full flex items-center justify-center flex-shrink-0">
+              <User className="w-6 h-6 sm:w-8 sm:h-8" />
             </div>
-            <div>
-              <h3 className="text-2xl font-bold">{formData.name || 'User'}</h3>
-              <p className="text-primary-100">{formData.email}</p>
+            <div className="min-w-0">
+              <h3 className="text-xl sm:text-2xl font-bold truncate">{formData.name || 'User'}</h3>
+              <p className="text-primary-100 text-sm truncate">{formData.email}</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/20">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 pt-4 border-t border-white/20">
             <div>
               <p className="text-primary-200 text-sm">Age</p>
               <p className="text-xl font-semibold">{formData.age} years</p>
@@ -419,11 +419,10 @@ const Profile = () => {
                   ].map((risk) => (
                     <label
                       key={risk.value}
-                      className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${
-                        formData.riskProfile === risk.value
+                      className={`flex items-center gap-3 p-3 rounded-lg border-2 cursor-pointer transition-all ${formData.riskProfile === risk.value
                           ? risk.color
                           : 'border-gray-200 hover:border-gray-300 bg-white'
-                      }`}
+                        }`}
                     >
                       <input
                         type="radio"
@@ -441,11 +440,10 @@ const Profile = () => {
                   ))}
                 </div>
               ) : (
-                <div className={`p-4 rounded-lg ${
-                  formData.riskProfile === 'conservative' ? 'bg-blue-50 border border-blue-200' :
-                  formData.riskProfile === 'aggressive' ? 'bg-orange-50 border border-orange-200' :
-                  'bg-primary-50 border border-primary-200'
-                }`}>
+                <div className={`p-4 rounded-lg ${formData.riskProfile === 'conservative' ? 'bg-blue-50 border border-blue-200' :
+                    formData.riskProfile === 'aggressive' ? 'bg-orange-50 border border-orange-200' :
+                      'bg-primary-50 border border-primary-200'
+                  }`}>
                   <p className="font-semibold text-gray-900 capitalize">
                     {formData.riskProfile === 'conservative' && '🛡️ Conservative'}
                     {formData.riskProfile === 'moderate' && '⚖️ Moderate'}
@@ -467,20 +465,20 @@ const Profile = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="mt-8 flex flex-wrap gap-4 justify-center"
+          className="mt-6 sm:mt-8 flex flex-wrap gap-3 justify-center"
         >
           <Link
             to="/dashboard"
-            className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium"
+            className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium text-sm"
           >
-            <BarChart2 className="w-5 h-5" />
+            <BarChart2 className="w-4 h-4" />
             View Dashboard
           </Link>
           <Link
             to="/scenarios"
-            className="flex items-center gap-2 px-6 py-3 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+            className="flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm"
           >
-            <TrendingUp className="w-5 h-5" />
+            <TrendingUp className="w-4 h-4" />
             Explore Scenarios
           </Link>
         </motion.div>
