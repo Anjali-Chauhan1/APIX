@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const test = async () => {
     try {
-        const response = await axios.post('http://localhost:5000/api/auth/register', {
+        const response = await axios.post('http://localhost:5005/api/auth/register', {
             name: 'Test User',
             email: 'test' + Date.now() + '@example.com',
             password: 'password123',

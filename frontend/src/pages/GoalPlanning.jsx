@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Target, Calculator, TrendingUp, TrendingDown, Info, RefreshCw } from 'lucide-react';
+import { Target, Calculator, Info, RefreshCw, TrendingUp, TrendingDown } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Cell
 } from 'recharts';
 import Card from '../components/Card';
 import Button from '../components/Button';
@@ -53,21 +52,11 @@ const GoalPlanning = () => {
     { value: 'aggressive', label: 'Aggressive', return: '12-14%', color: 'bg-orange-50 border-orange-200' }
   ];
 
-  const contributionBreakdown = result?.yearlyPlan?.slice(0, 5) || [];
-
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white py-8 px-4">
+      <div className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white py-8 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
-          <button 
-            onClick={() => window.location.href = '/dashboard'}
-            className="flex items-center gap-2 text-primary-200 hover:text-white transition-colors mb-6 font-medium"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            Back to Dashboard
-          </button>
-          
           <div className="flex items-center gap-4 mb-2">
             <div className="p-3 bg-white/10 rounded-xl">
               <Target className="w-8 h-8" />
@@ -84,8 +73,8 @@ const GoalPlanning = () => {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
           
           {/* Left Panel - Inputs */}
-          <div className="lg:col-span-5">
-            <Card className="sticky top-6">
+          <div className="lg:col-span-5 mt-10">
+            <Card className="sticky top-16">
               <div className="flex items-center gap-2 mb-6">
                 <Calculator className="w-5 h-5 text-primary-600" />
                 <Card.Title>Define Your Goal</Card.Title>
@@ -173,7 +162,7 @@ const GoalPlanning = () => {
           </div>
 
           {/* Right Panel - Results */}
-          <div className="lg:col-span-7 space-y-6">
+          <div className="lg:col-span-7 space-y-6 mt-10">
             
             {loading ? (
               <Card className="text-center py-16">

@@ -3,8 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   User, Mail, Calendar, Wallet, PiggyBank, Target,
-  Shield, TrendingUp, ArrowLeft, Save, Edit2, Check, LogOut,
-  Home, BarChart2, Settings
+  Shield, TrendingUp, ArrowLeft, Save, Edit2, Check, LogOut, BarChart3
 } from 'lucide-react';
 import Button from '../components/Button';
 import { authAPI } from '../services/api';
@@ -95,37 +94,7 @@ const Profile = () => {
   const yearsToRetirement = parseInt(formData.retirementAge) - parseInt(formData.age);
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-14 sm:h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 sm:w-10 sm:h-10 bg-primary-100 rounded-xl flex items-center justify-center">
-                <TrendingUp className="w-5 h-5 text-primary-600" />
-              </div>
-              <h1 className="text-base sm:text-xl font-bold text-gray-900">NPS Retirement Copilot</h1>
-            </div>
-            <div className="flex items-center gap-3">
-              <Link
-                to="/dashboard"
-                className="flex items-center gap-1.5 text-gray-600 hover:text-primary-600 transition-colors text-sm"
-              >
-                <Home className="w-4 h-4" />
-                <span className="hidden xs:inline">Dashboard</span>
-              </Link>
-              <button
-                onClick={handleLogout}
-                className="flex items-center gap-1.5 text-gray-600 hover:text-red-600 transition-colors text-sm"
-              >
-                <LogOut className="w-4 h-4" />
-                <span className="hidden xs:inline">Logout</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </nav>
-
+    <div className="pb-20">
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -471,7 +440,7 @@ const Profile = () => {
             to="/dashboard"
             className="flex items-center gap-2 px-5 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium text-sm"
           >
-            <BarChart2 className="w-4 h-4" />
+            <BarChart3 className="w-4 h-4" />
             View Dashboard
           </Link>
           <Link

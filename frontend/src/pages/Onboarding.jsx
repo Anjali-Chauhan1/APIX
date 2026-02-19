@@ -35,7 +35,7 @@ const Onboarding = () => {
   const conversationFlow = [
     {
       id: 'welcome',
-      botMessage: "Hey there! 👋 I'm your NPS Retirement Coach. I'll help you plan a secure financial future in just 60 seconds!",
+      botMessage: "Hey there! 👋 I'm your PensionSaarthi Coach. I'll help you plan a secure financial future in just 60 seconds!",
       followUp: "Let's start - what should I call you?",
       field: 'name',
       placeholder: 'Type your name...',

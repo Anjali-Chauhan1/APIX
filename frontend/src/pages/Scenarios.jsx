@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Target, Zap, Clock } from 'lucide-react';
+import { Target, Zap, Clock } from 'lucide-react';
 import Card from '../components/Card';
 import Button from '../components/Button';
 import { projectionAPI } from '../services/api';
@@ -35,15 +35,8 @@ const Scenarios = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
+    <div className="pb-20">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 pt-6 sm:pt-8">
-        <button
-          onClick={() => window.location.href = '/dashboard'}
-          className="flex items-center gap-2 text-gray-500 hover:text-primary-600 transition-colors mb-6 sm:mb-8 font-semibold text-sm sm:text-base"
-        >
-          <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-          Back to Dashboard
-        </button>
 
         <header className="mb-8 sm:mb-12">
           <h1 className="text-2xl xs:text-3xl sm:text-4xl font-black text-gray-900 mb-2">Scenario Comparison</h1>

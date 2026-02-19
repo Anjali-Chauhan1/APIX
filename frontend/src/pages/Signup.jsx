@@ -283,7 +283,7 @@ const Signup = () => {
             <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
               <TrendingUp className="w-7 h-7 text-white" />
             </div>
-            <h1 className="text-2xl font-bold text-white">NPS Retirement Copilot</h1>
+            <h1 className="text-2xl font-bold text-white">PensionSaarthi</h1>
           </div>
           <h2 className="text-4xl font-bold text-white mb-4">Start Your Retirement Journey</h2>
           <p className="text-primary-100 text-lg">Create your profile and get personalized retirement projections in minutes.</p>
@@ -303,7 +303,7 @@ const Signup = () => {
             );
           })}
         </div>
-        <p className="text-primary-200 text-sm">© 2026 NPS Retirement Copilot. All rights reserved.</p>
+        <p className="text-primary-200 text-sm">© 2026 PensionSaarthi. All rights reserved.</p>
       </div>
 
       {/* Right Side - Form */}
@@ -315,7 +315,7 @@ const Signup = () => {
               <div className="w-9 h-9 bg-primary-100 rounded-xl flex items-center justify-center">
                 <TrendingUp className="w-5 h-5 text-primary-600" />
               </div>
-              <h1 className="text-base xs:text-lg font-bold text-gray-900">NPS Retirement Copilot</h1>
+              <h1 className="text-base xs:text-lg font-bold text-gray-900">PensionSaarthi</h1>
             </div>
             {/* Mobile Progress Bar */}
             <div className="flex items-center gap-1.5">

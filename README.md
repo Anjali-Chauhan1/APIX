@@ -1,4 +1,4 @@
-# NPS Retirement Copilot
+# PensionSaarthi
 
 An AI-powered retirement planning application for India's National Pension System (NPS). Get personalized retirement projections, pension simulations, and smart insights to secure your financial future.
 

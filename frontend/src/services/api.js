@@ -1,10 +1,9 @@
 import axios from 'axios';
 import { io } from 'socket.io-client';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
-const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:5000';
+const API_URL = import.meta.env.VITE_API_URL || '/api';
+const WS_URL = import.meta.env.VITE_WS_URL || window.location.origin;
 
-// Create axios instance
 const api = axios.create({
     baseURL: API_URL,
     headers: {
@@ -12,7 +11,6 @@ const api = axios.create({
     }
 });
 
-// Request interceptor to add token
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -26,7 +24,7 @@ api.interceptors.request.use(
     }
 );
 
-// Response interceptor for error handling
+
 api.interceptors.response.use(
     (response) => response,
     (error) => {
@@ -76,7 +74,7 @@ export const projectionAPI = {
     getScenarios: () => api.get('/projections/scenarios'),
     getHistory: () => api.get('/projections/history'),
     getAssumptions: () => api.get('/projections/assumptions'),
-    
+
     // New feature endpoints
     goalPlanning: (params) => api.post('/projections/goal-planning', params),
     familyProtection: (params) => api.post('/projections/family-protection', params),

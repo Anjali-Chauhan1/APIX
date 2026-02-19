@@ -1,9 +1,9 @@
 {
-  "name": "nps-retirement-copilot",
+  "name": "pensionsaarthi",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "NPS Retirement Copilot - AI-powered retirement planning",
+  "description": "PensionSaarthi - AI-powered retirement planning",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

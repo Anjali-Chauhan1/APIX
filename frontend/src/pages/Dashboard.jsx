@@ -16,19 +16,22 @@ import Card from '../components/Card';
 import AICoach from '../components/AICoach';
 import Button from '../components/Button';
 import Slider from '../components/Slider';
-import ExportDropdown from '../components/ExportDropdown';
 import { useAuthStore } from '../store/authStore';
 import { useProjectionStore } from '../store/projectionStore';
 import { projectionAPI, aiCoachAPI, getSocket } from '../services/api';
 import { formatCurrency, getReadinessColor, getReadinessBgColor, cn } from '../utils/helpers';
+import { useSearchParams } from 'react-router-dom';
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, logout } = useAuthStore();
   const { currentProjection, setProjection, isLoading, setLoading } = useProjectionStore();
   const [insights, setInsights] = useState([]);
   const [showAI, setShowAI] = useState(false);
-  const [activeTab, setActiveTab] = useState('overview');
+  
+  const activeTab = searchParams.get('tab') || 'overview';
+  const setActiveTab = (tab) => setSearchParams({ tab });
 
   // Extended state for all features
   const [realityShock, setRealityShock] = useState(null);
@@ -160,20 +163,35 @@ const Dashboard = () => {
 
   const calculateLive = async () => {
     try {
-      // Use WebSocket for real-time calculation
+      // 1. Use WebSocket for 'instant' calculation if connected
       const socket = getSocket();
-      socket.emit('calculate-projection', { ...params, name: user?.name });
+      if (socket.connected) {
+        socket.emit('calculate-projection', { ...params, name: user?.name });
+      }
 
-      // Also update gap detector
-      const gapRes = await projectionAPI.gapDetector({
-        monthlyNPSContribution: params.monthlyNPSContribution,
-        desiredMonthlyPension: params.desiredMonthlyPension,
-        currentAge: params.age,
-        retirementAge: params.retirementAge,
-        riskProfile: params.riskProfile,
-        existingSavings: params.existingSavings,
-        annuityPercentage: params.annuityPercentage
-      });
+      // 2. Also use HTTP as a reliable backup/complement
+      // This ensures all derived data (readiness, shock, gap) is updated
+      const [projectionRes, gapRes] = await Promise.all([
+        projectionAPI.generate({ ...params, name: user?.name }),
+        projectionAPI.gapDetector({
+          monthlyNPSContribution: params.monthlyNPSContribution,
+          desiredMonthlyPension: params.desiredMonthlyPension,
+          currentAge: params.age,
+          retirementAge: params.retirementAge,
+          riskProfile: params.riskProfile,
+          existingSavings: params.existingSavings,
+          annuityPercentage: params.annuityPercentage
+        })
+      ]);
+
+      if (projectionRes.data.success) {
+        const data = projectionRes.data.data;
+        setProjection(data.projection);
+        setRealityShock(data.realityShock);
+        setTimeline(data.timeline);
+        setPensionSimulation(data.pensionSimulation);
+        // Note: contributionGap is handled by the other call
+      }
 
       if (gapRes.data.success) {
         setContributionGap(gapRes.data.data);
@@ -224,44 +242,7 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-20">
-      {/* Header */}
-      <nav className="bg-white border-b border-gray-100 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-14 sm:h-16 items-center">
-            <div className="flex items-center gap-2">
-              <div className="bg-gradient-to-br from-primary-600 to-primary-700 p-2 sm:p-2.5 rounded-xl shadow-lg shadow-primary-200">
-                <ShieldCheck className="text-white w-5 h-5 sm:w-6 sm:h-6" />
-              </div>
-              <div>
-                <span className="font-bold text-base sm:text-xl tracking-tight bg-gradient-to-r from-primary-600 to-primary-800 bg-clip-text text-transparent">NPS Copilot</span>
-                <span className="hidden xs:inline text-[10px] font-bold text-primary-600 bg-primary-50 px-2 py-0.5 rounded-full ml-2">BETA</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-2 sm:gap-3">
-              <button
-                onClick={() => setShowAI(true)}
-                className="p-2 sm:p-2.5 text-gray-500 hover:text-primary-600 transition-colors relative bg-gray-50 rounded-xl hover:bg-primary-50"
-              >
-                <MessageSquare className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
-              </button>
-              {/* Export & Share */}
-              <ExportDropdown />
-              <button
-                onClick={handleLogout}
-                className="hidden xs:flex p-2 sm:p-2.5 text-gray-500 hover:text-red-600 transition-colors bg-gray-50 rounded-xl hover:bg-red-50"
-                title="Logout"
-              >
-                <LogOut className="w-4 h-4 sm:w-5 sm:h-5" />
-              </button>
-              <Link to="/profile" className="h-8 w-8 sm:h-10 sm:w-10 bg-gradient-to-br from-primary-500 to-primary-700 text-white rounded-xl flex items-center justify-center font-bold text-sm shadow-lg shadow-primary-200 hover:shadow-xl transition-shadow">
-                {user?.name?.charAt(0) || 'U'}
-              </Link>
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="pb-20">
 
       {/* Hero Stats Section */}
       <div className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white py-5 sm:py-8 px-3 sm:px-4">
@@ -290,33 +271,7 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Navigation Tabs */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {[
-            { id: 'overview', label: 'Overview', icon: BarChart3 },
-            { id: 'simulator', label: 'Pension Simulator', icon: Calculator },
-            { id: 'scenarios', label: 'Scenarios', icon: Target },
-            { id: 'montecarlo', label: 'Monte Carlo', icon: TrendingUp },
-            { id: 'timeline', label: 'Timeline', icon: Calendar },
-            { id: 'protection', label: 'Family Protection', icon: Heart }
-          ].map(tab => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={cn(
-                "flex items-center gap-2 px-4 py-2.5 rounded-xl font-medium text-sm whitespace-nowrap transition-all",
-                activeTab === tab.id
-                  ? "bg-primary-600 text-white shadow-lg shadow-primary-200"
-                  : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-100"
-              )}
-            >
-              <tab.icon className="w-4 h-4" />
-              {tab.label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <div className="mt-8"></div>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
 
@@ -1162,16 +1117,22 @@ const FamilyProtectionSection = ({ data, params, setParams, onRecalculate }) => 
         {/* Impact Summary */}
         <div className="mt-6 sm:mt-8 grid grid-cols-3 gap-2 sm:gap-4">
           <div className="bg-gray-50 rounded-xl p-3 sm:p-4 text-center">
-            <p className="text-[10px] xs:text-xs text-gray-500 font-medium mb-1">Corpus Loss</p>
-            <p className="text-sm xs:text-base sm:text-xl font-bold text-red-600">-{formatCurrency(data.impact.corpusReduction, true)}</p>
+            <p className="text-[10px] xs:text-xs text-gray-500 font-medium mb-1">Corpus {data.impact.corpusReduction >= 0 ? 'Loss' : 'Gain'}</p>
+            <p className={cn("text-sm xs:text-base sm:text-xl font-bold", data.impact.corpusReduction >= 0 ? "text-red-600" : "text-green-600")}>
+              {data.impact.corpusReduction >= 0 ? '-' : '+'}{formatCurrency(Math.abs(data.impact.corpusReduction), true)}
+            </p>
           </div>
           <div className="bg-gray-50 rounded-xl p-3 sm:p-4 text-center">
-            <p className="text-[10px] xs:text-xs text-gray-500 font-medium mb-1">Pension Loss</p>
-            <p className="text-sm xs:text-base sm:text-xl font-bold text-red-600">-{formatCurrency(data.impact.pensionReduction)}/mo</p>
+            <p className="text-[10px] xs:text-xs text-gray-500 font-medium mb-1">Pension {data.impact.pensionReduction >= 0 ? 'Loss' : 'Gain'}</p>
+            <p className={cn("text-sm xs:text-base sm:text-xl font-bold", data.impact.pensionReduction >= 0 ? "text-red-600" : "text-green-600")}>
+              {data.impact.pensionReduction >= 0 ? '-' : '+'}{formatCurrency(Math.abs(data.impact.pensionReduction))}/mo
+            </p>
           </div>
           <div className="bg-gray-50 rounded-xl p-3 sm:p-4 text-center">
-            <p className="text-[10px] xs:text-xs text-gray-500 font-medium mb-1">Total Loss</p>
-            <p className="text-sm xs:text-base sm:text-xl font-bold text-red-600">{data.impact.reductionPercent}%</p>
+            <p className="text-[10px] xs:text-xs text-gray-500 font-medium mb-1">Total {data.impact.pensionReduction >= 0 ? 'Loss' : 'Impact'}</p>
+            <p className={cn("text-sm xs:text-base sm:text-xl font-bold", data.impact.pensionReduction >= 0 ? "text-red-600" : "text-green-600")}>
+              {data.impact.pensionReduction >= 0 ? '-' : ''}{Math.abs(data.impact.lossPercent ?? data.impact.reductionPercent)}%
+            </p>
           </div>
         </div>
       </div>

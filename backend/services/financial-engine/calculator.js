@@ -103,10 +103,16 @@ class FinancialEngine {
 
     /**
      * Calculate monthly pension from annuity
-     * Formula: Monthly Pension = (Annuity Amount × Annual Rate) / 12
+     * Formula: Monthly Pension = corpus × (annuityRate / 100) / 12
+     * annuityRate is stored as 6.5 (percentage), converted to decimal 0.065 here
+     * Correct: corpus * 0.065 / 12  ✓
+     * Wrong:   corpus * 0.065 / 12 / 12  ✗  (double division)
+     * Wrong:   corpus * 0.0065 / 12  ✗  (rate already decimal, divided again)
      */
-    calculateMonthlyPension(annuityAmount, annualAnnuityRate = 6.5) {
-        const monthlyPension = (annuityAmount * annualAnnuityRate / 100) / 12;
+    calculateMonthlyPension(corpus, annualAnnuityRate = 6.5) {
+        // annuityRate arrives as 6.5 (%), so divide by 100 once to get 0.065, then /12 for monthly
+        const annuityRateDecimal = annualAnnuityRate / 100; // 6.5 → 0.065
+        const monthlyPension = (corpus * annuityRateDecimal) / 12;
         return Math.round(monthlyPension);
     }
 
@@ -123,7 +129,9 @@ class FinancialEngine {
 
         const annuityAmount = totalCorpus * (validPercentage / 100);
         const lumpSum = totalCorpus - annuityAmount;
-        const monthlyPension = this.calculateMonthlyPension(annuityAmount);
+
+        // Calculate pension on the intended annuity amount
+        const monthlyPension = this.calculateMonthlyPension(annuityAmount, this.assumptions.annuityRate.default);
 
         return {
             totalCorpus: Math.round(totalCorpus),
@@ -139,19 +147,19 @@ class FinancialEngine {
      * Compares predicted corpus with required corpus for desired pension
      */
     calculateReadinessScore(predictedCorpus, desiredMonthlyPension, annuityRate = 6.5) {
-        if (!desiredMonthlyPension || desiredMonthlyPension === 0) {
-            // If no desired pension, use a default benchmark
-            return 50; // Neutral score
-        }
+        // Use a default pension goal if none provided
+        const targetPension = desiredMonthlyPension || 50000;
 
         // Calculate required corpus for desired pension
         // Formula: Required Corpus = (Desired Monthly Pension × 12) / Annuity Rate
-        const requiredCorpus = (desiredMonthlyPension * 12) / (annuityRate / 100);
+        const requiredCorpus = (targetPension * 12) / (annuityRate / 100);
+
+        if (requiredCorpus <= 0) return 100;
 
         // Calculate readiness score
         const score = Math.min((predictedCorpus / requiredCorpus) * 100, 100);
 
-        return Math.round(score);
+        return Math.round(score) || 0;
     }
 
     /**
@@ -218,18 +226,21 @@ class FinancialEngine {
     generateProjection(userProfile) {
         const {
             age,
+            currentAge,
             retirementAge,
             monthlySalary,
             monthlyNPSContribution,
-            existingSavings,
+            existingSavings = 0,
             riskProfile,
-            expectedSalaryGrowth,
+            expectedSalaryGrowth = 8,
             desiredMonthlyPension,
             inflationRate = this.assumptions.inflation.default,
             annuityPercentage = 40
         } = userProfile;
 
-        const yearsToRetirement = retirementAge - age;
+        const effectiveAge = parseInt(age || currentAge || 30);
+        const effectiveRetirementAge = parseInt(retirementAge || 60);
+        const yearsToRetirement = Math.max(0, effectiveRetirementAge - effectiveAge);
         const expectedReturn = this.getExpectedReturn(riskProfile);
 
         // Calculate corpus with growing contributions
@@ -301,12 +312,12 @@ class FinancialEngine {
      */
     calculateRealityShock(currentPensionNeed, inflationRate, yearsToRetirement) {
         const futureValue = currentPensionNeed * Math.pow(1 + inflationRate / 100, yearsToRetirement);
-        
+
         // Determine risk level based on gap
         let riskLevel = 'low';
         let riskColor = '#16A34A'; // Green
         const multiplier = futureValue / currentPensionNeed;
-        
+
         if (multiplier > 3) {
             riskLevel = 'high';
             riskColor = '#DC2626'; // Red
@@ -358,7 +369,7 @@ class FinancialEngine {
         // Calculate required monthly contribution
         const monthlyRate = expectedReturn / 100 / 12;
         const months = yearsToRetirement * 12;
-        
+
         let requiredMonthlyContribution;
         if (monthlyRate === 0 || corpusGap <= 0) {
             requiredMonthlyContribution = Math.max(0, corpusGap / months);
@@ -401,7 +412,12 @@ class FinancialEngine {
         const expectedReturn = this.getExpectedReturn(riskProfile);
 
         // Calculate corpus if contributions continue normally
-        const normalProjection = this.generateProjection(params);
+        // IMPORTANT: generateProjection expects `age`, but family-protection params use `currentAge`.
+        // Pass age explicitly so yearsToRetirement is computed correctly.
+        const normalProjection = this.generateProjection({
+            ...params,
+            age: params.age || currentAge  // ensure `age` is always set
+        });
 
         // Calculate corpus if contributions stop at specified age
         const yearsOfContributing = stopContributionAge - currentAge;
@@ -413,38 +429,51 @@ class FinancialEngine {
             yearsToRetirement: yearsOfContributing,
             annualReturnRate: expectedReturn,
             annualSalaryGrowth: params.expectedSalaryGrowth || 8,
-            existingSavings
+            existingSavings: existingSavings || 0
         });
 
-        // Grow the stopped corpus for remaining years
-        const stoppedCorpus = earlyStopGrowth.totalCorpus * 
+        // Grow the stopped corpus for remaining years (no more contributions, just compound growth)
+        const stoppedCorpus = earlyStopGrowth.totalCorpus *
             Math.pow(1 + expectedReturn / 100, yearsWithoutContribution);
 
+        const normalNPSBreakdown = this.calculateNPSBreakdown(normalProjection.results.totalCorpus, annuityPercentage);
         const stoppedNPSBreakdown = this.calculateNPSBreakdown(stoppedCorpus, annuityPercentage);
 
-        // Calculate percentage reduction
-        const reductionPercent = ((normalProjection.results.totalCorpus - stoppedCorpus) / 
-            normalProjection.results.totalCorpus * 100).toFixed(1);
+        const normalCorpus = normalProjection.results.totalCorpus;
+        const normalPension = normalNPSBreakdown.monthlyPension;
+        const stoppedPension = stoppedNPSBreakdown.monthlyPension;
 
-        const pensionReduction = normalProjection.results.monthlyPension - stoppedNPSBreakdown.monthlyPension;
+        // Bug 3 Fix — Loss% must divide by normalPension, not stoppedPension
+        // Correct:  ((normalPension - stoppedPension) / normalPension) * 100
+        // Wrong:    ((normalPension - stoppedPension) / stoppedPension) * 100  ✗
+        const reductionPercent = normalCorpus > 0
+            ? ((normalCorpus - stoppedCorpus) / normalCorpus * 100).toFixed(1)
+            : 0;
+
+        const lossPercent = normalPension > 0
+            ? (((normalPension - stoppedPension) / normalPension) * 100).toFixed(1)
+            : 0;
+
+        const pensionReduction = normalPension - stoppedPension;
 
         return {
             normalScenario: {
-                corpus: normalProjection.results.totalCorpus,
-                monthlyPension: normalProjection.results.monthlyPension
+                corpus: normalCorpus,
+                monthlyPension: normalPension
             },
             stoppedScenario: {
                 stopAge: stopContributionAge,
                 corpus: Math.round(stoppedCorpus),
-                monthlyPension: stoppedNPSBreakdown.monthlyPension,
+                monthlyPension: stoppedPension,
                 lumpSum: stoppedNPSBreakdown.lumpSum
             },
             impact: {
-                corpusReduction: Math.round(normalProjection.results.totalCorpus - stoppedCorpus),
+                corpusReduction: Math.round(normalCorpus - stoppedCorpus),
                 pensionReduction: Math.round(pensionReduction),
-                reductionPercent
+                reductionPercent,
+                lossPercent  // pension loss percentage using correct formula
             },
-            message: `If you stop contributing at age ${stopContributionAge}, your pension will reduce by ${reductionPercent}% (₹${Math.round(pensionReduction).toLocaleString('en-IN')}/month less)`
+            message: `If you stop contributing at age ${stopContributionAge}, your pension will reduce by ${lossPercent}% (₹${Math.abs(Math.round(pensionReduction)).toLocaleString('en-IN')}/month less)`
         };
     }
 
@@ -505,7 +534,7 @@ class FinancialEngine {
             for (let year = 1; year <= yearsToRetirement; year++) {
                 // Add yearly contributions
                 totalCorpus += currentContribution * 12;
-                
+
                 // Apply returns
                 totalCorpus *= (1 + expectedReturn / 100);
 
@@ -791,8 +820,8 @@ class FinancialEngine {
         return {
             ...basicGap,
             isOnTrack: basicGap.gap <= 0,
-            gapMessage: basicGap.gap > 0 
-                ? `You are under-investing by ₹${basicGap.gap.toLocaleString('en-IN')}/month` 
+            gapMessage: basicGap.gap > 0
+                ? `You are under-investing by ₹${basicGap.gap.toLocaleString('en-IN')}/month`
                 : `Great! You are on track to meet your goal`,
             suggestions
         };

@@ -7,7 +7,7 @@ import { cn } from '../utils/helpers';
 
 const AICoach = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useState([
-    { role: 'assistant', content: 'Hi! I am your NPS Retirement Copilot. How can I help you plan your future today?' }
+    { role: 'assistant', content: 'Hi! I am PensionSaarthi. How can I help you plan your future today?' }
   ]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);

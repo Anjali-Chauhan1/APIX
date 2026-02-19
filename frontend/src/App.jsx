@@ -6,11 +6,23 @@ import Profile from './pages/Profile';
 import Dashboard from './pages/Dashboard';
 import Scenarios from './pages/Scenarios';
 import GoalPlanning from './pages/GoalPlanning';
+import Layout from './components/Layout';
 import { useAuthStore } from './store/authStore';
 
 const ProtectedRoute = ({ children }) => {
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  return isAuthenticated ? children : <Navigate to="/login" />;
+  const token = useAuthStore((state) => state.token);
+  const isHydrated = useAuthStore((state) => state.isHydrated);
+
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-gray-500">Loading...</p>
+      </div>
+    );
+  }
+
+  return (isAuthenticated || !!token) ? children : <Navigate to="/login" />;
 };
 
 const PublicRoute = ({ children }) => {
@@ -49,7 +61,9 @@ function App() {
           path="/dashboard" 
           element={
             <ProtectedRoute>
-              <Dashboard />
+              <Layout>
+                <Dashboard />
+              </Layout>
             </ProtectedRoute>
           } 
         />
@@ -57,7 +71,9 @@ function App() {
           path="/profile" 
           element={
             <ProtectedRoute>
-              <Profile />
+              <Layout>
+                <Profile />
+              </Layout>
             </ProtectedRoute>
           } 
         />
@@ -65,7 +81,9 @@ function App() {
           path="/scenarios" 
           element={
             <ProtectedRoute>
-              <Scenarios />
+              <Layout>
+                <Scenarios />
+              </Layout>
             </ProtectedRoute>
           } 
         />
@@ -73,7 +91,9 @@ function App() {
           path="/goal-planning" 
           element={
             <ProtectedRoute>
-              <GoalPlanning />
+              <Layout>
+                <GoalPlanning />
+              </Layout>
             </ProtectedRoute>
           } 
         />

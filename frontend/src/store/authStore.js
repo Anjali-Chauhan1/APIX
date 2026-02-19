@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
 
 export const useAuthStore = create(
     persist(
@@ -7,6 +7,7 @@ export const useAuthStore = create(
             user: null,
             token: null,
             isAuthenticated: false,
+            isHydrated: false,
 
             setAuth: (user, token) => set({
                 user,
@@ -18,15 +19,34 @@ export const useAuthStore = create(
                 user: { ...state.user, ...userData }
             })),
 
-            logout: () => set({
-                user: null,
-                token: null,
-                isAuthenticated: false
-            }),
+            logout: () => {
+                localStorage.removeItem('token');
+                set({
+                    user: null,
+                    token: null,
+                    isAuthenticated: false
+                });
+            },
         }),
         {
             name: 'auth-storage',
-            getStorage: () => localStorage,
+            storage: createJSONStorage(() => localStorage),
+            partialize: (state) => ({
+                user: state.user,
+                token: state.token,
+                isAuthenticated: state.isAuthenticated
+            }),
+            onRehydrateStorage: () => (state, error) => {
+                if (error) {
+                    console.error('Auth store hydration failed:', error);
+                }
+                setTimeout(() => {
+                    if (state?.token && !state?.isAuthenticated) {
+                        useAuthStore.setState({ isAuthenticated: true });
+                    }
+                    useAuthStore.setState({ isHydrated: true });
+                }, 0);
+            }
         }
     )
 );

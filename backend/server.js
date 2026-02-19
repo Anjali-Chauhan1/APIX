@@ -9,6 +9,11 @@ import { createServer } from 'http';
 import connectDB from './config/database.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
 
+// Services
+import financialEngine from './services/financial-engine/calculator.js';
+import monteCarloEngine from './services/financial-engine/monteCarlo.js';
+import scenarioGenerator from './services/financial-engine/scenarioGenerator.js';
+
 // Routes
 import authRoutes from './routes/authRoutes.js';
 import projectionRoutes from './routes/projectionRoutes.js';
@@ -47,10 +52,10 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Rate limiting
+// Rate limiting - Relaxed for development and intensive dashboard usage
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // Limit each IP to 100 requests per windowMs
+    windowMs: 1 * 60 * 1000, // 1 minute
+    max: 1000, // Limit each IP to 1000 requests per minute
     message: 'Too many requests from this IP, please try again later.'
 });
 
@@ -60,7 +65,7 @@ app.use('/api/', limiter);
 app.get('/', (req, res) => {
     res.json({
         success: true,
-        message: 'NPS Retirement Copilot API',
+        message: 'PensionSaarthi API',
         version: '1.0.0',
         endpoints: {
             auth: '/api/auth',
@@ -81,14 +86,19 @@ io.on('connection', (socket) => {
     // Handle real-time projection calculation
     socket.on('calculate-projection', async (data) => {
         try {
-            const { default: financialEngine } = await import('./services/financial-engine/calculator.js');
+            if (!data) return;
+            console.log('📊 Calculating projection for:', data.name || 'Unknown');
 
             const projection = financialEngine.generateProjection(data);
+            console.log('✅ Projection calculated. Readiness Score:', projection.results.retirementReadinessScore);
+
+            // Recalculate related data based on the new projection
             const realityShock = financialEngine.calculateRealityShock(
                 data.desiredMonthlyPension || projection.results.monthlyPension,
                 data.inflationRate || 6,
-                data.retirementAge - data.age
+                (data.retirementAge || 60) - (data.age || 30)
             );
+
             const pensionSimulation = financialEngine.calculateNPSPensionSimulation(
                 projection.results.totalCorpus
             );
@@ -102,6 +112,7 @@ io.on('connection', (socket) => {
                 }
             });
         } catch (error) {
+            console.error('❌ Socket Projection Error:', error);
             socket.emit('projection-result', {
                 success: false,
                 message: 'Error calculating projection'
@@ -112,7 +123,7 @@ io.on('connection', (socket) => {
     // Real-time pension simulation with annuity slider
     socket.on('pension-simulate', async (data) => {
         try {
-            const { default: financialEngine } = await import('./services/financial-engine/calculator.js');
+            if (!data || !data.corpus) return;
             const simulation = financialEngine.calculateNPSPensionSimulation(
                 data.corpus,
                 data.annuityOptions || [40, 50, 60, 70, 80, 90, 100]
@@ -122,6 +133,7 @@ io.on('connection', (socket) => {
                 data: simulation
             });
         } catch (error) {
+            console.error('❌ Socket Pension Simulation Error:', error);
             socket.emit('pension-result', {
                 success: false,
                 message: 'Error simulating pension'
@@ -132,13 +144,14 @@ io.on('connection', (socket) => {
     // Real-time goal planning
     socket.on('goal-planning', async (data) => {
         try {
-            const { default: financialEngine } = await import('./services/financial-engine/calculator.js');
+            if (!data) return;
             const plan = financialEngine.calculateGoalBasedPlan(data);
             socket.emit('goal-result', {
                 success: true,
                 data: plan
             });
         } catch (error) {
+            console.error('❌ Socket Goal Planning Error:', error);
             socket.emit('goal-result', {
                 success: false,
                 message: 'Error calculating goal'
@@ -195,7 +208,7 @@ httpServer.listen(PORT, () => {
     console.log(`
 ╔═══════════════════════════════════════════════════════╗
 ║                                                       ║
-║   🚀 NPS Retirement Copilot API Server Running       ║
+║   🚀 PensionSaarthi API Server Running       ║
 ║                                                       ║
 ║   📡 Port: ${PORT}                                    ║
 ║   🌍 Environment: ${process.env.NODE_ENV || 'development'}                      ║

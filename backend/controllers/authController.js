@@ -8,6 +8,7 @@ const demoUsers = new Map();
 const isDbConnected = () => mongoose.connection.readyState === 1;
 
 export const register = async (req, res) => {
+    console.log('📝 Registration attempt for:', req.body?.email);
     try {
         const {
             name,
@@ -24,23 +25,72 @@ export const register = async (req, res) => {
             preferredLanguage
         } = req.body;
 
+        if (!name || !email || !password) {
+            return res.status(400).json({
+                success: false,
+                message: 'Please provide name, email, and password'
+            });
+        }
+
+        const parsedAge = Number(age);
+        const parsedMonthlySalary = Number(monthlySalary);
+        const parsedMonthlyNPSContribution = Number(monthlyNPSContribution);
+        const parsedRetirementAge = Number(retirementAge);
+        const parsedExistingSavings = existingSavings === undefined ? 0 : Number(existingSavings);
+        const parsedExpectedSalaryGrowth = expectedSalaryGrowth === undefined ? 8 : Number(expectedSalaryGrowth);
+        const parsedDesiredMonthlyPension = desiredMonthlyPension === undefined || desiredMonthlyPension === null || desiredMonthlyPension === ''
+            ? null
+            : Number(desiredMonthlyPension);
+
+        if (
+            !Number.isFinite(parsedAge) ||
+            !Number.isFinite(parsedMonthlySalary) ||
+            !Number.isFinite(parsedMonthlyNPSContribution) ||
+            !Number.isFinite(parsedRetirementAge)
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid numeric inputs. Please provide valid age, salary, contribution, and retirement age.'
+            });
+        }
+
+        if (
+            !Number.isFinite(parsedExistingSavings) ||
+            !Number.isFinite(parsedExpectedSalaryGrowth) ||
+            (parsedDesiredMonthlyPension !== null && !Number.isFinite(parsedDesiredMonthlyPension))
+        ) {
+            return res.status(400).json({
+                success: false,
+                message: 'Invalid optional numeric inputs.'
+            });
+        }
+
+        const normalizedEmail = String(email).toLowerCase().trim();
+
         if (!isDbConnected()) {
+            if (demoUsers.has(normalizedEmail)) {
+                return res.status(400).json({
+                    success: false,
+                    message: 'User already exists with this email'
+                });
+            }
+
             const demoUser = {
                 _id: 'demo_' + Date.now(),
                 name,
-                email,
-                age: age || 25,
-                monthlySalary: monthlySalary || 50000,
-                existingSavings: existingSavings || 0,
-                monthlyNPSContribution: monthlyNPSContribution || 5000,
-                retirementAge: retirementAge || 60,
+                email: normalizedEmail,
+                age: parsedAge,
+                monthlySalary: parsedMonthlySalary,
+                existingSavings: parsedExistingSavings,
+                monthlyNPSContribution: parsedMonthlyNPSContribution,
+                retirementAge: parsedRetirementAge,
                 riskProfile: riskProfile || 'moderate',
-                expectedSalaryGrowth: expectedSalaryGrowth || 8,
-                desiredMonthlyPension,
+                expectedSalaryGrowth: parsedExpectedSalaryGrowth,
+                desiredMonthlyPension: parsedDesiredMonthlyPension,
                 preferredLanguage: preferredLanguage || 'en'
             };
 
-            demoUsers.set(email, demoUser);
+            demoUsers.set(normalizedEmail, demoUser);
             const token = generateToken(demoUser._id);
 
             return res.status(201).json({
@@ -51,7 +101,7 @@ export const register = async (req, res) => {
         }
 
 
-        const userExists = await User.findOne({ email });
+        const userExists = await User.findOne({ email: normalizedEmail });
         if (userExists) {
             return res.status(400).json({
                 success: false,
@@ -61,16 +111,16 @@ export const register = async (req, res) => {
 
         const user = await User.create({
             name,
-            email,
+            email: normalizedEmail,
             password,
-            age,
-            monthlySalary,
-            existingSavings: existingSavings || 0,
-            monthlyNPSContribution,
-            retirementAge,
+            age: parsedAge,
+            monthlySalary: parsedMonthlySalary,
+            existingSavings: parsedExistingSavings,
+            monthlyNPSContribution: parsedMonthlyNPSContribution,
+            retirementAge: parsedRetirementAge,
             riskProfile: riskProfile || 'moderate',
-            expectedSalaryGrowth: expectedSalaryGrowth || 8,
-            desiredMonthlyPension,
+            expectedSalaryGrowth: parsedExpectedSalaryGrowth,
+            desiredMonthlyPension: parsedDesiredMonthlyPension,
             preferredLanguage: preferredLanguage || 'en'
         });
 
@@ -93,9 +143,33 @@ export const register = async (req, res) => {
                     token
                 }
             });
+        } else {
+            return res.status(500).json({
+                success: false,
+                message: 'Unable to create user'
+            });
         }
     } catch (error) {
         console.error('Register Error FULL:', error);
+
+        if (error?.code === 11000) {
+            return res.status(409).json({
+                success: false,
+                message: 'User already exists with this email'
+            });
+        }
+
+        if (error?.name === 'ValidationError') {
+            const validationMessage = Object.values(error.errors || {})
+                .map((e) => e.message)
+                .join(', ');
+            return res.status(400).json({
+                success: false,
+                message: validationMessage || 'Invalid registration data',
+                error: error.name
+            });
+        }
+
         res.status(500).json({
             success: false,
             message: error.message || 'Error registering user',
@@ -108,6 +182,7 @@ export const register = async (req, res) => {
 export const login = async (req, res) => {
     try {
         const { email, password } = req.body;
+        const normalizedEmail = String(email || '').toLowerCase().trim();
 
 
         if (!email || !password) {
@@ -117,15 +192,15 @@ export const login = async (req, res) => {
             });
         }
 
-      
+
         if (!isDbConnected()) {
-            let demoUser = demoUsers.get(email);
+            let demoUser = demoUsers.get(normalizedEmail);
 
             if (!demoUser) {
                 demoUser = {
                     _id: 'demo_' + Date.now(),
-                    name: email.split('@')[0],
-                    email,
+                    name: normalizedEmail.split('@')[0],
+                    email: normalizedEmail,
                     age: 30,
                     monthlySalary: 50000,
                     existingSavings: 100000,
@@ -135,7 +210,7 @@ export const login = async (req, res) => {
                     expectedSalaryGrowth: 8,
                     preferredLanguage: 'en'
                 };
-                demoUsers.set(email, demoUser);
+                demoUsers.set(normalizedEmail, demoUser);
             }
 
             const token = generateToken(demoUser._id);
@@ -147,7 +222,7 @@ export const login = async (req, res) => {
             });
         }
 
-        const user = await User.findOne({ email }).select('+password');
+        const user = await User.findOne({ email: normalizedEmail }).select('+password');
 
         if (!user) {
             return res.status(401).json({
