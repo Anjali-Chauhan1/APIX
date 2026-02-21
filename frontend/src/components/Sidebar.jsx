@@ -55,9 +55,15 @@ const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const { isSidebarCollapsed: isCollapsed, toggleSidebar } = useUIStore();
-  const [isMobile, setIsMobile] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth < 640);
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 640);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -90,15 +96,36 @@ const Sidebar = () => {
 
   return (
     <>
-      {/* Mobile Toggle Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="lg:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-xl shadow-lg border border-gray-100 text-primary-600"
+      {/* Mobile Hamburger */}
+      {isMobile && (
+        <button
+          className="fixed top-3 left-3 z-50 p-2 bg-white rounded-lg shadow-md sm:hidden"
+          onClick={() => setIsOpen((v) => !v)}
+        >
+          {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+        </button>
+      )}
+      {/* Sidebar Drawer for mobile */}
+      <nav
+        className={cn(
+          "fixed z-40 top-0 left-0 h-full bg-white border-r border-gray-100 flex flex-col transition-all duration-300",
+          isCollapsed ? "w-16 sm:w-20" : "w-48 sm:w-64 lg:w-72",
+          isMobile ? (isOpen ? "translate-x-0" : "-translate-x-full") : "",
+          "shadow-lg min-w-0"
+        )}
+        style={{ minWidth: 0 }}
       >
-        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-      </button>
-
-      {/* Backdrop for mobile */}
+        {/* ...existing code... */}
+      </nav>
+      {/* Overlay for mobile drawer */}
+      {isMobile && isOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-30 z-30 sm:hidden"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+    </>
+  );
       <AnimatePresence>
         {isOpen && (
           <motion.div

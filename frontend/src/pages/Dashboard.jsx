@@ -257,38 +257,38 @@ const Dashboard = () => {
   );
 
   return (
-    <div className="pb-20">
+    <div className="pb-20 w-full min-w-0">
 
       {/* Hero Stats Section */}
-      <div className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white py-5 sm:py-8 px-3 sm:px-4">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
+      <div className="bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white py-4 sm:py-5 md:py-8 px-2 sm:px-3 md:px-4">
+        <div className="max-w-7xl mx-auto w-full min-w-0">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-2 sm:gap-4 md:gap-6">
             <div>
               <p className="text-primary-200 text-xs sm:text-sm font-medium mb-1">Welcome back, {user?.name || 'Investor'}</p>
-              <h1 className="text-xl xs:text-2xl sm:text-3xl font-bold">Your Retirement Roadmap</h1>
-              <p className="text-primary-100 mt-1 text-sm">You are <span className="text-white font-bold">{results.retirementReadinessScore}%</span> ready for retirement</p>
+              <h1 className="text-lg xs:text-xl sm:text-2xl md:text-3xl font-bold">Your Retirement Roadmap</h1>
+              <p className="text-primary-100 mt-1 text-xs sm:text-sm">You are <span className="text-white font-bold">{results.retirementReadinessScore}%</span> ready for retirement</p>
             </div>
-            <div className="grid grid-cols-3 gap-2 xs:gap-3 w-full md:w-auto md:flex md:flex-wrap">
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl xs:rounded-2xl p-2.5 xs:p-3 sm:p-4">
+            <div className="grid grid-cols-3 gap-1 xs:gap-2 sm:gap-3 w-full md:w-auto md:flex md:flex-wrap">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg xs:rounded-xl sm:rounded-2xl p-2 xs:p-2.5 sm:p-3 md:p-4">
                 <p className="text-primary-200 text-[10px] xs:text-xs font-medium mb-0.5">Corpus</p>
-                <p className="text-sm xs:text-base sm:text-2xl font-bold truncate">{formatCurrency(results.totalCorpus, true)}</p>
+                <p className="text-xs xs:text-sm sm:text-base md:text-2xl font-bold truncate">{formatCurrency(results.totalCorpus, true)}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl xs:rounded-2xl p-2.5 xs:p-3 sm:p-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg xs:rounded-xl sm:rounded-2xl p-2 xs:p-2.5 sm:p-3 md:p-4">
                 <p className="text-primary-200 text-[10px] xs:text-xs font-medium mb-0.5">Pension/mo</p>
-                <p className="text-sm xs:text-base sm:text-2xl font-bold truncate">{formatCurrency(results.monthlyPension)}</p>
+                <p className="text-xs xs:text-sm sm:text-base md:text-2xl font-bold truncate">{formatCurrency(results.monthlyPension)}</p>
               </div>
-              <div className="bg-white/10 backdrop-blur-sm rounded-xl xs:rounded-2xl p-2.5 xs:p-3 sm:p-4">
+              <div className="bg-white/10 backdrop-blur-sm rounded-lg xs:rounded-xl sm:rounded-2xl p-2 xs:p-2.5 sm:p-3 md:p-4">
                 <p className="text-primary-200 text-[10px] xs:text-xs font-medium mb-0.5">Years Left</p>
-                <p className="text-sm xs:text-base sm:text-2xl font-bold">{results.yearsToRetirement} Yrs</p>
+                <p className="text-xs xs:text-sm sm:text-base md:text-2xl font-bold">{results.yearsToRetirement} Yrs</p>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-8"></div>
+      <div className="mt-4 sm:mt-6 md:mt-8"></div>
 
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+      <main className="max-w-7xl mx-auto w-full min-w-0 px-2 sm:px-4 md:px-6 lg:px-8 mt-4 sm:mt-6 md:mt-8">
 
         <AnimatePresence mode="wait">
           {activeTab === 'overview' && (
@@ -297,10 +297,10 @@ const Dashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-1 lg:grid-cols-12 gap-6"
+              className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6"
             >
               {/* Left Column */}
-              <div className="lg:col-span-8 space-y-6">
+              <div className="lg:col-span-8 space-y-4 sm:space-y-6">
 
                 {/* Wealth Growth Chart - 3D Bar Chart */}
                 <WealthGrowthProjection />
