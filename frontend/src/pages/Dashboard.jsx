@@ -13,6 +13,7 @@ import {
   Play, Pause, RefreshCw, User, LogOut
 } from 'lucide-react';
 import Card from '../components/Card';
+import WealthGrowthProjection from '../components/WealthGrowthProjection';
 import AICoach from '../components/AICoach';
 import Button from '../components/Button';
 import Slider from '../components/Slider';
@@ -301,72 +302,8 @@ const Dashboard = () => {
               {/* Left Column */}
               <div className="lg:col-span-8 space-y-6">
 
-                {/* Wealth Growth Chart */}
-                <Card className="overflow-hidden">
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      <Card.Title>Wealth Growth Projection</Card.Title>
-                      <Card.Description>Your corpus growth over time</Card.Description>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-primary-600"></div>
-                        <span className="font-medium text-gray-600">Corpus</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                        <span className="font-medium text-gray-600">Contributions</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={yearlyBreakdown}>
-                        <defs>
-                          <linearGradient id="colorCorpus" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="#2563EB" stopOpacity={0.2} />
-                            <stop offset="95%" stopColor="#2563EB" stopOpacity={0} />
-                          </linearGradient>
-                        </defs>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E5E7EB" />
-                        <XAxis
-                          dataKey="age"
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 11, fill: '#9CA3AF' }}
-                        />
-                        <YAxis
-                          axisLine={false}
-                          tickLine={false}
-                          tick={{ fontSize: 11, fill: '#9CA3AF' }}
-                          tickFormatter={(value) => `₹${(value / 100000).toFixed(0)}L`}
-                        />
-                        <Tooltip
-                          content={({ active, payload }) => {
-                            if (active && payload && payload.length) {
-                              return (
-                                <div className="bg-white p-4 shadow-xl rounded-xl border border-gray-100">
-                                  <p className="text-xs text-gray-500 font-bold mb-2">AGE {payload[0].payload.age}</p>
-                                  <p className="text-lg font-bold text-primary-600">{formatCurrency(payload[0].value)}</p>
-                                  <p className="text-xs text-gray-500 mt-1">Returns: {formatCurrency(payload[0].payload.returns)}</p>
-                                </div>
-                              );
-                            }
-                            return null;
-                          }}
-                        />
-                        <Area
-                          type="monotone"
-                          dataKey="corpusValue"
-                          stroke="#2563EB"
-                          strokeWidth={3}
-                          fillOpacity={1}
-                          fill="url(#colorCorpus)"
-                        />
-                      </AreaChart>
-                    </ResponsiveContainer>
-                  </div>
-                </Card>
+                {/* Wealth Growth Chart - 3D Bar Chart */}
+                <WealthGrowthProjection />
 
                 {/* Interactive Decision Playground */}
                 <Card className="bg-gradient-to-br from-primary-50 to-white border-2 border-primary-100">
