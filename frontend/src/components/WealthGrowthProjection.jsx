@@ -118,19 +118,19 @@ const WealthGrowthProjection = () => {
   }, [autoSim]);
 
   return (
-    <div className="max-w-3xl mx-auto p-6">
-      <div className="rounded-3xl shadow-xl bg-gradient-to-br from-white via-blue-50 to-blue-100 relative overflow-hidden">
+    <div className="max-w-3xl mx-auto p-2 sm:p-4 md:p-6 w-full min-w-[0]">
+      <div className="rounded-2xl sm:rounded-3xl shadow-xl bg-gradient-to-br from-white via-blue-50 to-blue-100 relative overflow-hidden w-full">
         {/* Header */}
-        <div className="flex justify-between items-start p-6">
+        <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0 p-2 sm:p-6">
           <div>
-            <h2 className="text-2xl font-bold text-blue-900">Wealth Growth Projection</h2>
-            <p className="text-blue-600 mt-1">Your corpus growth over time in 3D visualization</p>
+            <h2 className="text-lg sm:text-2xl font-bold text-blue-900 leading-tight">Wealth Growth Projection</h2>
+            <p className="text-blue-600 mt-1 text-xs sm:text-base">Your corpus growth over time in 3D visualization</p>
           </div>
           <button
-            className="flex items-center gap-2 bg-white bg-opacity-70 backdrop-blur-md px-4 py-2 rounded-full shadow border border-blue-200 transition hover:bg-blue-50"
+            className="flex items-center gap-2 bg-white bg-opacity-70 backdrop-blur-md px-2 py-1 sm:px-4 sm:py-2 rounded-full shadow border border-blue-200 transition hover:bg-blue-50 text-xs sm:text-base"
             type="button"
           >
-            <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
+            <span className="w-2.5 h-2.5 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></span>
             <span className="text-blue-700 font-medium">Corpus Value</span>
           </button>
         </div>
@@ -138,21 +138,21 @@ const WealthGrowthProjection = () => {
         
 
         {/* Chart Container */}
-        <div className="bg-white bg-opacity-60 backdrop-blur-lg rounded-2xl shadow-2xl p-6 m-6 mt-0 relative">
-          <div className="absolute inset-0 pointer-events-none rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(96,165,250,0.15) 100%)' }}></div>
-          <ResponsiveContainer width="100%" height={350}>
+        <div className="bg-white bg-opacity-60 backdrop-blur-lg rounded-xl sm:rounded-2xl shadow-2xl p-2 sm:p-6 m-2 sm:m-6 mt-0 relative min-w-0">
+          <div className="absolute inset-0 pointer-events-none rounded-xl sm:rounded-2xl" style={{ background: 'linear-gradient(135deg, rgba(255,255,255,0.7) 0%, rgba(96,165,250,0.15) 100%)' }}></div>
+          <ResponsiveContainer width="100%" height={220} minWidth={0} minHeight={180}>
             <BarChart
               data={data}
-              margin={{ top: 30, right: 30, left: 0, bottom: 0 }}
-              barCategoryGap={18}
+              margin={{ top: 20, right: 10, left: 0, bottom: 0 }}
+              barCategoryGap={10}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="#cfe2f3" />
               <XAxis
                 dataKey="age"
-                tick={{ fill: '#000', fontWeight: 700 }}
+                tick={{ fill: '#000', fontWeight: 700, fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
-                label={{ value: 'Age', position: 'insideBottomRight', offset: -5, fill: '#000', fontWeight: 700 }}
+                label={{ value: 'Age', position: 'insideBottomRight', offset: -5, fill: '#000', fontWeight: 700, fontSize: 11 }}
               />
               <YAxis
                 tickFormatter={formatCorpus}
@@ -160,8 +160,8 @@ const WealthGrowthProjection = () => {
                 domain={[0, 16e7]}
                 axisLine={false}
                 tickLine={false}
-                tick={{ fill: '#000', fontWeight: 700 }}
-                label={{ value: 'Corpus (₹)', angle: -90, position: 'insideLeft', fill: '#000', fontWeight: 700 }}
+                tick={{ fill: '#000', fontWeight: 700, fontSize: 10 }}
+                label={{ value: 'Corpus (₹)', angle: -90, position: 'insideLeft', fill: '#000', fontWeight: 700, fontSize: 11 }}
               />
               <Tooltip content={<CustomTooltip />} />
               <Bar
