@@ -1,7 +1,5 @@
 import * as math from 'mathjs';
 
-
-
 class FinancialEngine {
     constructor() {
         // Default assumptions (shown in transparency panel)
@@ -144,15 +142,17 @@ class FinancialEngine {
 
     /**
      * Calculate retirement readiness score
-     * Compares predicted corpus with required corpus for desired pension
+     * Compares predicted corpus with inflation-adjusted required corpus for desired lifestyle
      */
-    calculateReadinessScore(predictedCorpus, desiredMonthlyPension, annuityRate = 6.5) {
+    calculateReadinessScore(predictedCorpus, desiredMonthlyPension, annuityRate = 6.5, inflationRate = 0, years = 0) {
         // Use a default pension goal if none provided
         const targetPension = desiredMonthlyPension || 50000;
 
-        // Calculate required corpus for desired pension
-        // Formula: Required Corpus = (Desired Monthly Pension × 12) / Annuity Rate
-        const requiredCorpus = (targetPension * 12) / (annuityRate / 100);
+        // Inflation-adjust the pension goal to maintain purchasing power
+        const inflationAdjustedGoal = targetPension * Math.pow(1 + (inflationRate / 100), years);
+
+        // Calculate required corpus for inflation-adjusted pension
+        const requiredCorpus = (inflationAdjustedGoal * 12) / (annuityRate / 100);
 
         if (requiredCorpus <= 0) return 100;
 
@@ -180,7 +180,7 @@ class FinancialEngine {
     }
 
     /**
-     * Calculate contribution gap to reach goal
+     * Calculate inflation-aware contribution gap to reach goal
      */
     calculateContributionGap(params) {
         const {
@@ -188,12 +188,16 @@ class FinancialEngine {
             desiredMonthlyPension,
             yearsToRetirement,
             riskProfile,
-            annuityPercentage = 40
+            annuityPercentage = 40,
+            inflationRate = 6
         } = params;
 
-        // Calculate required corpus for desired pension
+        // Inflation-adjust the desired pension
+        const inflationAdjustedPension = desiredMonthlyPension * Math.pow(1 + inflationRate / 100, yearsToRetirement);
+
+        // Calculate required corpus for inflation-adjusted pension
         const annuityRate = this.assumptions.annuityRate.default;
-        const requiredAnnuityAmount = (desiredMonthlyPension * 12) / (annuityRate / 100);
+        const requiredAnnuityAmount = (inflationAdjustedPension * 12) / (annuityRate / 100);
         const requiredTotalCorpus = requiredAnnuityAmount / (annuityPercentage / 100);
 
         // Calculate what monthly contribution is needed
@@ -214,8 +218,9 @@ class FinancialEngine {
         return {
             requiredMonthlyContribution: Math.round(requiredMonthlyContribution),
             currentMonthlyContribution: Math.round(currentMonthlyContribution),
-            gap: Math.round(gap),
-            requiredTotalCorpus: Math.round(requiredTotalCorpus)
+            gap: Math.round(Math.max(0, gap)),
+            requiredTotalCorpus: Math.round(requiredTotalCorpus),
+            inflationAdjustedPension: Math.round(inflationAdjustedPension)
         };
     }
 
@@ -265,24 +270,51 @@ class FinancialEngine {
             yearsToRetirement
         );
 
-        // Calculate readiness score
-        const readinessScore = this.calculateReadinessScore(
-            corpusData.totalCorpus,
-            desiredMonthlyPension
+        // 1. Calculate Reality Shock first to get inflation risk
+        const realityShock = this.calculateRealityShock(
+            desiredMonthlyPension || npsBreakdown.monthlyPension,
+            inflationRate,
+            yearsToRetirement
         );
 
-        const riskLevel = this.getRiskLevel(readinessScore);
+        // 2. Calculate Readiness Score (Inflation-Aware)
+        const readinessScore = this.calculateReadinessScore(
+            corpusData.totalCorpus,
+            desiredMonthlyPension,
+            this.assumptions.annuityRate.default,
+            inflationRate,
+            yearsToRetirement
+        );
+
+        // 3. Determine Unified risk level (Source of Truth)
+        let unifiedRisk = this.getRiskLevel(readinessScore);
+
+        // If the user is >90% ready, they have accounted for the shock, so it's Low Risk
+        if (readinessScore >= 90) {
+            unifiedRisk = 'low';
+        } else {
+            // Otherwise, if inflation shock is high, elevate the risk
+            if (realityShock.riskLevel === 'high') {
+                unifiedRisk = 'high';
+            } else if (realityShock.riskLevel === 'moderate' && unifiedRisk === 'low') {
+                unifiedRisk = 'moderate';
+            }
+        }
+
+        // Apply unified risk back to reality shock for consistency
+        realityShock.riskLevel = unifiedRisk;
+        realityShock.riskColor = unifiedRisk === 'high' ? '#DC2626' : (unifiedRisk === 'moderate' ? '#F59E0B' : '#16A34A');
 
         // Add age to yearly breakdown
         const yearlyBreakdown = corpusData.yearlyBreakdown.map((item, index) => ({
             ...item,
-            age: age + index + 1
+            age: effectiveAge + index + 1
         }));
 
         return {
             inputs: {
-                currentAge: age,
-                retirementAge,
+                currentAge: effectiveAge,
+                retirementAge: effectiveRetirementAge,
                 monthlySalary,
                 monthlyContribution: monthlyNPSContribution,
                 existingSavings,
@@ -301,8 +333,9 @@ class FinancialEngine {
                 yearsToRetirement,
                 totalContributions: corpusData.totalContributions,
                 totalReturns: corpusData.totalReturns,
-                riskLevel
+                riskLevel: unifiedRisk
             },
+            realityShock,
             yearlyBreakdown
         };
     }
@@ -310,21 +343,36 @@ class FinancialEngine {
     /**
      * Calculate reality shock - inflation adjusted pension need
      */
-    calculateRealityShock(currentPensionNeed, inflationRate, yearsToRetirement) {
+    calculateRealityShock(currentPensionNeed, inflationRate, yearsToRetirement, readinessScore) {
         const futureValue = currentPensionNeed * Math.pow(1 + inflationRate / 100, yearsToRetirement);
 
-        // Determine risk level based on gap
-        let riskLevel = 'low';
-        let riskColor = '#16A34A'; // Green
+        // Determine multiplier
         const multiplier = futureValue / currentPensionNeed;
 
-        if (multiplier > 3) {
+        // Base risk level on inflation multiplier
+        let riskLevel = 'low';
+        if (multiplier > 2.5) {
             riskLevel = 'high';
-            riskColor = '#DC2626'; // Red
-        } else if (multiplier > 2) {
+        } else if (multiplier > 1.7) {
             riskLevel = 'moderate';
-            riskColor = '#F59E0B'; // Orange
         }
+
+        // Holistic risk: If readiness is low, the overall reality is high risk
+        if (readinessScore !== undefined) {
+            if (readinessScore < 40) {
+                riskLevel = 'high';
+            } else if (readinessScore < 70 && riskLevel !== 'high') {
+                riskLevel = 'moderate';
+            }
+        }
+
+        // Set risk color based on final riskLevel
+        const riskColors = {
+            high: '#DC2626', // Red
+            moderate: '#F59E0B', // Orange
+            low: '#16A34A' // Green
+        };
+        const riskColor = riskColors[riskLevel] || '#16A34A';
 
         return {
             currentNeed: Math.round(currentPensionNeed),
@@ -351,7 +399,7 @@ class FinancialEngine {
             inflationRate = 6
         } = params;
 
-        const yearsToRetirement = retirementAge - currentAge;
+        const yearsToRetirement = Math.max(0, retirementAge - currentAge);
         const annuityRate = this.assumptions.annuityRate.default;
         const expectedReturn = this.getExpectedReturn(riskProfile);
 
@@ -378,14 +426,41 @@ class FinancialEngine {
                 (((Math.pow(1 + monthlyRate, months) - 1) / monthlyRate) * (1 + monthlyRate));
         }
 
+        // Generate yearly plan for the UI chart
+        let yearlyPlan = [];
+        let currentCorpus = existingSavings;
+        let totalContributed = existingSavings;
+        const monthlyContrib = Math.round(Math.max(0, requiredMonthlyContribution));
+
+        for (let year = 1; year <= yearsToRetirement; year++) {
+            const yearlyContribution = monthlyContrib * 12;
+            currentCorpus += yearlyContribution;
+            totalContributed += yearlyContribution;
+
+            // Apply returns
+            currentCorpus *= (1 + expectedReturn / 100);
+
+            yearlyPlan.push({
+                year: year,
+                age: currentAge + year,
+                corpus: Math.round(currentCorpus),
+                totalContributed: Math.round(totalContributed)
+            });
+        }
+
         return {
             desiredMonthlyPension,
             inflationAdjustedPension: Math.round(inflationAdjustedPension),
+            targetCorpus: Math.round(requiredTotalCorpus),
             requiredCorpus: Math.round(requiredTotalCorpus),
             futureExistingSavings: Math.round(futureExistingSavings),
             corpusGap: Math.round(Math.max(0, corpusGap)),
-            requiredMonthlyContribution: Math.round(Math.max(0, requiredMonthlyContribution)),
+            requiredMonthlyContribution: monthlyContrib,
             yearsToRetirement,
+            expectedReturn,
+            totalContributions: Math.round(totalContributed),
+            totalReturns: Math.round(currentCorpus - totalContributed),
+            yearlyPlan,
             assumptions: {
                 inflationRate,
                 expectedReturn,
@@ -690,7 +765,7 @@ class FinancialEngine {
     /**
      * Calculate NPS pension with different annuity options
      */
-    calculateNPSPensionSimulation(corpus, annuityRates = [40, 60, 80, 100]) {
+    calculateNPSPensionSimulation(corpus, annuityRates = [40, 50, 60, 70, 80, 90, 100]) {
         const results = [];
         const annuityReturnRate = this.assumptions.annuityRate.default;
 

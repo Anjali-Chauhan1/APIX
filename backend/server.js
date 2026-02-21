@@ -5,6 +5,8 @@ import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { Server } from 'socket.io';
 import { createServer } from 'http';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 import connectDB from './config/database.js';
 import { errorHandler, notFound } from './middlewares/errorHandler.js';
@@ -19,8 +21,10 @@ import authRoutes from './routes/authRoutes.js';
 import projectionRoutes from './routes/projectionRoutes.js';
 import aiCoachRoutes from './routes/aiCoachRoutes.js';
 
-// Load env vars
-dotenv.config();
+// Load env vars from backend/.env regardless of where node is started
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+dotenv.config({ path: path.join(__dirname, '.env') });
 
 // Try to connect to database, continue without it in demo mode
 let dbConnected = false;
@@ -33,14 +37,23 @@ try {
 }
 
 const app = express();
-const httpServer = createServer(app);
 
-// Socket.IO setup for real-time projections
+// Create HTTP server without passing app so Socket.IO can handle /socket.io first
+const httpServer = createServer();
+
+// Socket.IO setup for real-time projections (must attach before forwarding other requests)
 const io = new Server(httpServer, {
+    path: '/socket.io',
     cors: {
         origin: '*',
         methods: ['GET', 'POST']
     }
+});
+
+// Forward non-Socket.IO requests to Express (so /socket.io is handled by Socket.IO, not 404)
+httpServer.on('request', (req, res) => {
+    if (req.url && req.url.startsWith('/socket.io')) return;
+    app(req, res);
 });
 
 // Middleware
@@ -205,24 +218,7 @@ app.use(errorHandler);
 const PORT = process.env.PORT || 5000;
 
 httpServer.listen(PORT, () => {
-    console.log(`
-╔═══════════════════════════════════════════════════════╗
-║                                                       ║
-║   🚀 PensionSaarthi API Server Running       ║
-║                                                       ║
-║   📡 Port: ${PORT}                                    ║
-║   🌍 Environment: ${process.env.NODE_ENV || 'development'}                      ║
-║   🔗 CORS Origin: ${process.env.CORS_ORIGIN || 'http://localhost:5173'}     ║
-║                                                       ║
-║   📚 API Documentation:                               ║
-║   • Auth: http://localhost:${PORT}/api/auth           ║
-║   • Projections: http://localhost:${PORT}/api/projections ║
-║   • AI Coach: http://localhost:${PORT}/api/ai-coach   ║
-║                                                       ║
-║   ⚡ WebSocket: Enabled for real-time updates        ║
-║                                                       ║
-╚═══════════════════════════════════════════════════════╝
-  `);
+    console.log('🚀 PensionSaarthi API Server Running');
 });
 
 export default app;

@@ -95,9 +95,12 @@ userSchema.pre('save', async function () {
     if (!this.isModified('password')) {
         return;
     }
-
+    const raw = this.password;
+    if (raw == null || typeof raw !== 'string') {
+        throw new Error('Password must be a non-empty string');
+    }
     const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+    this.password = await bcrypt.hash(raw, salt);
 });
 
 // Compare password method

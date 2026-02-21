@@ -24,12 +24,18 @@ const GoalPlanning = () => {
     expectedSalaryGrowth: 8
   });
 
+  // Debounced real-time updates as parameters change
   useEffect(() => {
-    calculateGoalPlan();
-  }, []);
+    const timer = setTimeout(() => {
+      calculateGoalPlan();
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [params]);
 
   const calculateGoalPlan = async () => {
-    setLoading(true);
+    // Only show full loading for the initial request
+    if (!result) setLoading(true);
+    
     try {
       const response = await projectionAPI.goalPlanning(params);
       if (response.data.success) {
@@ -38,7 +44,7 @@ const GoalPlanning = () => {
     } catch (error) {
       console.error('Goal Planning Error:', error);
     } finally {
-      setLoading(false);
+      if (!result) setLoading(false);
     }
   };
 

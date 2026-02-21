@@ -7,7 +7,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, process.cwd(), '');
-  const backendTarget = env.VITE_BACKEND_TARGET || 'http://localhost:5005';
+  const backendTarget = env.VITE_BACKEND_TARGET || 'http://localhost:5000';
 
   return {
     plugins: [react()],

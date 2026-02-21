@@ -27,53 +27,56 @@ class MonteCarloEngine {
      * Run single simulation path
      */
     runSingleSimulation(params) {
-        const {
-            initialMonthlyContribution,
-            yearsToRetirement,
-            meanReturn,
-            volatility,
-            annualSalaryGrowth,
-            existingSavings = 0
-        } = params;
+        const initialMonthlyContribution = Number(params.initialMonthlyContribution) || 0;
+        const yearsToRetirement = Number(params.yearsToRetirement) || 0;
+        const meanReturn = Number(params.meanReturn) || 0;
+        const volatility = Number(params.volatility) || 0;
+        const annualSalaryGrowth = Number(params.annualSalaryGrowth) || 0;
+        const existingSavings = Number(params.existingSavings) || 0;
 
         let corpus = existingSavings;
         let currentMonthlyContribution = initialMonthlyContribution;
 
         for (let year = 1; year <= yearsToRetirement; year++) {
-            // Random return for this year
-            const yearReturn = this.generateRandomReturn(meanReturn, volatility);
+            // Random return for this year (Arithmetic Mean to Geometric Mean adjustment)
+            const annualMean = meanReturn;
+            const annualVol = volatility;
 
-            // Add contributions
+            // Standard financial model: Geometric Mean = Arithmetic Mean - (Volatility^2 / 2)
+            // But here we use Arithmetic Mean for simplicity in simulation
+            const yearReturn = this.generateRandomReturn(annualMean, annualVol);
+
+            // Add contributions (invested throughout the year)
             const yearlyContribution = currentMonthlyContribution * 12;
             corpus += yearlyContribution;
 
-            // Apply returns
-            corpus *= (1 + yearReturn / 100);
+            // Apply returns (simplified year-end)
+            const returnMultiplier = (1 + yearReturn / 100);
+            corpus *= Math.max(0, returnMultiplier); // Corpus cannot be negative
 
             // Increase contribution for next year
             currentMonthlyContribution *= (1 + annualSalaryGrowth / 100);
         }
 
-        return corpus;
+        return Math.round(corpus);
     }
 
     /**
      * Run Monte Carlo simulation
      */
     runSimulation(params, numSimulations = this.defaultSimulations) {
-        const {
-            monthlyContribution,
-            yearsToRetirement,
-            riskProfile,
-            salaryGrowth,
-            existingSavings
-        } = params;
+        const monthlyContribution = Number(params.monthlyContribution) || 0;
+        const yearsToRetirement = Number(params.yearsToRetirement) || 0;
+        const riskProfile = (params.riskProfile || 'moderate').toLowerCase();
+        const salaryGrowth = Number(params.salaryGrowth) || 0;
+        const existingSavings = Number(params.existingSavings) || 0;
+        const targetCorpus = Number(params.targetCorpus) || 0;
 
         // Define volatility based on risk profile
         const volatilityMap = {
-            conservative: 8,  // 8% standard deviation
-            moderate: 12,     // 12% standard deviation
-            aggressive: 16    // 16% standard deviation
+            conservative: 8,
+            moderate: 12,
+            aggressive: 16
         };
 
         const returnMap = {
@@ -108,17 +111,19 @@ class MonteCarloEngine {
         const stdDev = stats.standardDeviation(results);
 
         // Percentiles
-        const p10 = stats.quantile(results, 0.10);  // Worst 10%
-        const p25 = stats.quantile(results, 0.25);  // Worst 25%
-        const p50 = stats.quantile(results, 0.50);  // Median
-        const p75 = stats.quantile(results, 0.75);  // Best 25%
-        const p90 = stats.quantile(results, 0.90);  // Best 10%
+        const p10 = stats.quantile(results, 0.10);
+        const p25 = stats.quantile(results, 0.25);
+        const p50 = stats.quantile(results, 0.50);
+        const p75 = stats.quantile(results, 0.75);
+        const p90 = stats.quantile(results, 0.90);
 
-        // Calculate success probability (if target is provided)
-        let successProbability = null;
-        if (params.targetCorpus) {
-            const successCount = results.filter(r => r >= params.targetCorpus).length;
-            successProbability = (successCount / numSimulations) * 100;
+        // Calculate success probability
+        let successProbability = 0;
+        if (targetCorpus > 0) {
+            const successCount = results.filter(r => r >= targetCorpus).length;
+            successProbability = (successCount / results.length) * 100;
+        } else {
+            successProbability = 100; // Success by default if no target
         }
 
         return {
@@ -143,8 +148,10 @@ class MonteCarloEngine {
                 optimistic: Math.round(p75),
                 bestCase: Math.round(p90)
             },
-            successProbability,
-            totalSimulations: numSimulations
+            successProbability: Math.min(100, Math.max(0, successProbability)),
+            totalSimulations: numSimulations,
+            yearsToRetirement,
+            targetCorpus
         };
     }
 

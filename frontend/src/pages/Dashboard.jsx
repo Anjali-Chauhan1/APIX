@@ -123,10 +123,11 @@ const Dashboard = () => {
       const monteCarloRes = await projectionAPI.monteCarlo({
         monthlyContribution: params.monthlyNPSContribution,
         retirementAge: params.retirementAge,
+        currentAge: params.age,
         riskProfile: params.riskProfile,
         salaryGrowth: params.expectedSalaryGrowth,
         existingSavings: params.existingSavings,
-        targetCorpus: params.desiredMonthlyPension * 12 / 0.065 / 0.4
+        targetCorpus: params.desiredMonthlyPension * 12 * Math.pow(1 + (params.inflationRate / 100), params.retirementAge - params.age) / 0.065 / 0.4
       });
 
       if (monteCarloRes.data.success) {
@@ -171,7 +172,7 @@ const Dashboard = () => {
 
       // 2. Also use HTTP as a reliable backup/complement
       // This ensures all derived data (readiness, shock, gap) is updated
-      const [projectionRes, gapRes] = await Promise.all([
+      const [projectionRes, gapRes, monteCarloRes] = await Promise.all([
         projectionAPI.generate({ ...params, name: user?.name }),
         projectionAPI.gapDetector({
           monthlyNPSContribution: params.monthlyNPSContribution,
@@ -181,6 +182,15 @@ const Dashboard = () => {
           riskProfile: params.riskProfile,
           existingSavings: params.existingSavings,
           annuityPercentage: params.annuityPercentage
+        }),
+        projectionAPI.monteCarlo({
+          monthlyContribution: params.monthlyNPSContribution,
+          retirementAge: params.retirementAge,
+          currentAge: params.age,
+          riskProfile: params.riskProfile,
+          salaryGrowth: params.expectedSalaryGrowth,
+          existingSavings: params.existingSavings,
+          targetCorpus: params.desiredMonthlyPension * 12 * Math.pow(1 + (params.inflationRate / 100), params.retirementAge - params.age) / 0.065 / 0.4
         })
       ]);
 
@@ -195,6 +205,10 @@ const Dashboard = () => {
 
       if (gapRes.data.success) {
         setContributionGap(gapRes.data.data);
+      }
+
+      if (monteCarloRes.data.success) {
+        setMonteCarloResults(monteCarloRes.data.data);
       }
     } catch (error) {
       console.error("Live Calculation Error:", error);
@@ -354,77 +368,92 @@ const Dashboard = () => {
                   </div>
                 </Card>
 
-                {/* Reality Shock + Contribution Gap Row */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Interactive Decision Playground */}
+                <Card className="bg-gradient-to-br from-primary-50 to-white border-2 border-primary-100">
+                  <div className="flex items-center gap-2 mb-6">
+                    <Settings className="w-5 h-5 text-primary-600" />
+                    <Card.Title>Decision Playground</Card.Title>
+                  </div>
 
-                  {/* Reality Shock Meter 🚨 */}
-                  <Card className={cn(
-                    "relative overflow-hidden",
-                    realityShock?.riskLevel === 'high' ? "bg-gradient-to-br from-red-600 to-red-800" :
-                      realityShock?.riskLevel === 'moderate' ? "bg-gradient-to-br from-orange-500 to-orange-700" :
-                        "bg-gradient-to-br from-green-600 to-green-800",
-                    "text-white border-0"
-                  )}>
-                    <div className="absolute top-0 right-0 opacity-10">
-                      <AlertTriangle className="w-32 h-32 -mt-8 -mr-8" />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
+                      <Slider
+                        label="Current Age"
+                        value={params.age}
+                        min={18}
+                        max={65}
+                        suffix=" Yrs"
+                        onChange={(val) => setParams({ ...params, age: val })}
+                      />
                     </div>
-                    <div className="flex items-center gap-2 mb-4">
-                      <AlertCircle className="w-5 h-5" />
-                      <span className="text-xs font-bold uppercase tracking-widest opacity-80">Reality Shock Meter</span>
+                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
+                      <Slider
+                        label="Monthly Contribution"
+                        value={params.monthlyNPSContribution}
+                        min={1000}
+                        max={100000}
+                        step={500}
+                        prefix="₹"
+                        onChange={(val) => setParams({ ...params, monthlyNPSContribution: val })}
+                      />
                     </div>
-                    <h4 className="text-xl font-bold mb-2">{realityShock?.message || 'Loading...'}</h4>
-                    <p className="text-sm opacity-90 leading-relaxed mb-4">
-                      Inflation will erode your purchasing power. Your planned ₹{results.monthlyPension?.toLocaleString('en-IN')}/month will feel like ₹{Math.round(results.monthlyPension / parseFloat(realityShock?.multiplier || 1))?.toLocaleString('en-IN')} in today's terms.
-                    </p>
-                    <div className="bg-white/20 rounded-xl p-3 flex items-center gap-3">
-                      <div className={cn(
-                        "w-3 h-3 rounded-full animate-pulse",
-                        realityShock?.riskLevel === 'high' ? "bg-red-300" :
-                          realityShock?.riskLevel === 'moderate' ? "bg-orange-300" : "bg-green-300"
-                      )}></div>
-                      <span className="text-sm font-bold uppercase">{realityShock?.riskLevel} Risk</span>
+                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
+                      <Slider
+                        label="Retirement Age"
+                        value={params.retirementAge}
+                        min={40}
+                        max={70}
+                        suffix=" Yrs"
+                        onChange={(val) => setParams({ ...params, retirementAge: val })}
+                      />
                     </div>
-                  </Card>
+                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
+                      <Slider
+                        label="Salary Growth"
+                        value={params.expectedSalaryGrowth}
+                        min={0}
+                        max={20}
+                        suffix="% p.a."
+                        onChange={(val) => setParams({ ...params, expectedSalaryGrowth: val })}
+                      />
+                    </div>
+                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
+                      <Slider
+                        label="Inflation Rate"
+                        value={params.inflationRate}
+                        min={3}
+                        max={10}
+                        suffix="% p.a."
+                        onChange={(val) => setParams({ ...params, inflationRate: val })}
+                      />
+                    </div>
+                  </div>
 
-                  {/* Contribution Gap Detector 📉 */}
-                  <Card>
-                    <div className="flex items-center gap-2 mb-4">
-                      <TrendingDown className="w-5 h-5 text-primary-600" />
-                      <Card.Title className="text-base">Contribution Gap Detector</Card.Title>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
+                      <Slider
+                        label="Annuity Purchase"
+                        value={params.annuityPercentage}
+                        min={40}
+                        max={100}
+                        suffix="%"
+                        onChange={(val) => setParams({ ...params, annuityPercentage: val })}
+                      />
                     </div>
-
-                    {contributionGap && (
-                      <>
-                        <div className={cn(
-                          "p-4 rounded-xl mb-4",
-                          contributionGap.isOnTrack ? "bg-green-50" : "bg-red-50"
-                        )}>
-                          <p className={cn(
-                            "font-bold",
-                            contributionGap.isOnTrack ? "text-green-700" : "text-red-700"
-                          )}>
-                            {contributionGap.gapMessage}
-                          </p>
-                        </div>
-
-                        {contributionGap.suggestions?.length > 0 && (
-                          <div className="space-y-2">
-                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Suggestions</p>
-                            {contributionGap.suggestions.slice(0, 2).map((suggestion, i) => (
-                              <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
-                                <span className="text-lg">{suggestion.icon}</span>
-                                <div>
-                                  <p className="font-semibold text-sm text-gray-800">{suggestion.title}</p>
-                                  <p className="text-xs text-gray-500">{suggestion.impact}</p>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                      </>
-                    )}
-                  </Card>
-                </div>
+                    
+                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl flex flex-col justify-center space-y-4">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 font-medium text-xs uppercase tracking-wider">Estimated Corpus</span>
+                        <span className="font-bold text-primary-600 text-lg">{formatCurrency(results.totalCorpus, true)}</span>
+                      </div>
+                      <div className="border-t border-gray-50"></div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-500 font-medium text-xs uppercase tracking-wider">Monthly Pension</span>
+                        <span className="font-bold text-green-600 text-lg">{formatCurrency(results.monthlyPension)}</span>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
 
                 {/* AI Insights */}
                 <Card>
@@ -495,68 +524,77 @@ const Dashboard = () => {
                   </div>
                 </Card>
 
-                {/* Interactive Decision Playground */}
-                <Card className="bg-gradient-to-br from-primary-50 to-white border-2 border-primary-100">
-                  <div className="flex items-center gap-2 mb-6">
-                    <Settings className="w-5 h-5 text-primary-600" />
-                    <Card.Title>Decision Playground</Card.Title>
-                  </div>
+                {/* Reality Shock + Contribution Gap Column */}
+                <div className="space-y-6">
 
-                  <div className="space-y-5">
-                    <Slider
-                      label="Monthly Contribution"
-                      value={params.monthlyNPSContribution}
-                      min={1000}
-                      max={100000}
-                      step={500}
-                      prefix="₹"
-                      onChange={(val) => setParams({ ...params, monthlyNPSContribution: val })}
-                    />
-                    <Slider
-                      label="Retirement Age"
-                      value={params.retirementAge}
-                      min={40}
-                      max={70}
-                      suffix=" Yrs"
-                      onChange={(val) => setParams({ ...params, retirementAge: val })}
-                    />
-                    <Slider
-                      label="Salary Growth"
-                      value={params.expectedSalaryGrowth}
-                      min={0}
-                      max={20}
-                      suffix="% p.a."
-                      onChange={(val) => setParams({ ...params, expectedSalaryGrowth: val })}
-                    />
-                    <Slider
-                      label="Inflation Rate"
-                      value={params.inflationRate}
-                      min={3}
-                      max={10}
-                      suffix="% p.a."
-                      onChange={(val) => setParams({ ...params, inflationRate: val })}
-                    />
-                    <Slider
-                      label="Annuity Purchase"
-                      value={params.annuityPercentage}
-                      min={40}
-                      max={100}
-                      suffix="%"
-                      onChange={(val) => setParams({ ...params, annuityPercentage: val })}
-                    />
-                  </div>
+                  {/* Reality Shock Meter 🚨 */}
+                  <Card className={cn(
+                    "relative overflow-hidden",
+                    realityShock?.riskLevel === 'high' ? "bg-gradient-to-br from-red-600 to-red-800" :
+                      realityShock?.riskLevel === 'moderate' ? "bg-gradient-to-br from-orange-500 to-orange-700" :
+                        "bg-gradient-to-br from-green-600 to-green-800",
+                    "text-white border-0"
+                  )}>
+                    <div className="absolute top-0 right-0 opacity-10">
+                      <AlertTriangle className="w-32 h-32 -mt-8 -mr-8" />
+                    </div>
+                    <div className="flex items-center gap-2 mb-4">
+                      <AlertCircle className="w-5 h-5" />
+                      <span className="text-xs font-bold uppercase tracking-widest opacity-80">Reality Shock Meter</span>
+                    </div>
+                    <h4 className="text-xl font-bold mb-2">{realityShock?.message || 'Loading...'}</h4>
+                    <p className="text-sm opacity-90 leading-relaxed mb-4">
+                      Inflation will erode your purchasing power. Your planned ₹{results.monthlyPension?.toLocaleString('en-IN')}/month will feel like ₹{Math.round(results.monthlyPension / parseFloat(realityShock?.multiplier || 1))?.toLocaleString('en-IN')} in today's terms.
+                    </p>
+                    <div className="bg-white/20 rounded-xl p-3 flex items-center gap-3">
+                      <div className={cn(
+                        "w-3 h-3 rounded-full animate-pulse",
+                        realityShock?.riskLevel === 'high' ? "bg-red-300" :
+                          realityShock?.riskLevel === 'moderate' ? "bg-orange-300" : "bg-green-300"
+                      )}></div>
+                      <span className="text-sm font-bold uppercase">{realityShock?.riskLevel} Risk</span>
+                    </div>
+                  </Card>
 
-                  <div className="mt-6 bg-white p-4 rounded-xl border border-primary-100 shadow-sm">
-                    <div className="flex justify-between items-center text-sm mb-2">
-                      <span className="text-gray-500 font-medium">Estimated Corpus</span>
-                      <span className="font-bold text-primary-600">{formatCurrency(results.totalCorpus, true)}</span>
+                  {/* Contribution Gap Detector 📉 */}
+                  <Card>
+                    <div className="flex items-center gap-2 mb-4">
+                      <TrendingDown className="w-5 h-5 text-primary-600" />
+                      <Card.Title className="text-base">Contribution Gap Detector</Card.Title>
                     </div>
-                    <div className="flex justify-between items-center text-sm">
-                      <span className="text-gray-500 font-medium">Monthly Pension</span>
-                      <span className="font-bold text-green-600">{formatCurrency(results.monthlyPension)}</span>
-                    </div>
-                  </div>
-                </Card>
+
+                    {contributionGap && (
+                      <>
+                        <div className={cn(
+                          "p-4 rounded-xl mb-4",
+                          contributionGap.isOnTrack ? "bg-green-50" : "bg-red-50"
+                        )}>
+                          <p className={cn(
+                            "font-bold",
+                            contributionGap.isOnTrack ? "text-green-700" : "text-red-700"
+                          )}>
+                            {contributionGap.gapMessage}
+                          </p>
+                        </div>
+
+                        {contributionGap.suggestions?.length > 0 && (
+                          <div className="space-y-2">
+                            <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Suggestions</p>
+                            {contributionGap.suggestions.slice(0, 2).map((suggestion, i) => (
+                              <div key={i} className="flex items-start gap-3 p-3 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors cursor-pointer">
+                                <span className="text-lg">{suggestion.icon}</span>
+                                <div>
+                                  <p className="font-semibold text-sm text-gray-800">{suggestion.title}</p>
+                                  <p className="text-xs text-gray-500">{suggestion.impact}</p>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </Card>
+                </div>
 
                 {/* Quick Actions */}
                 <div className="grid grid-cols-2 gap-3">
@@ -709,9 +747,20 @@ const Dashboard = () => {
 
 // NPS Pension Simulator Section
 const PensionSimulatorSection = ({ corpus, pensionSimulation, params, setParams }) => {
-  const [selectedAnnuity, setSelectedAnnuity] = useState(40);
+  const selectedAnnuity = params.annuityPercentage || 40;
+  
+  // Calculate dynamic values for the selected percentage (don't rely on pre-calculated list)
+  const annuityRate = 6.5; // Default assumption
+  const annuityAmount = corpus * (selectedAnnuity / 100);
+  const lumpSum = corpus - annuityAmount;
+  const monthlyPension = (annuityAmount * (annuityRate / 100)) / 12;
 
-  const selectedOption = pensionSimulation?.find(p => p.annuityPercentage === selectedAnnuity) || pensionSimulation?.[0];
+  const getAnnuityDescription = (p) => {
+    if (p <= 40) return 'Minimum annuity - Maximum lump sum withdrawal';
+    if (p <= 60) return 'Balanced approach - Good pension with decent lump sum';
+    if (p <= 80) return 'Pension focused - Higher monthly income';
+    return 'Full annuity - Maximum monthly pension, no lump sum';
+  };
 
   return (
     <div className="space-y-6">
@@ -729,16 +778,21 @@ const PensionSimulatorSection = ({ corpus, pensionSimulation, params, setParams 
 
             <div className="space-y-6">
               <div>
-                <label className="block text-sm font-semibold text-gray-700 mb-3">
-                  Annuity Percentage: <span className="text-primary-600">{selectedAnnuity}%</span>
-                </label>
+                <div className="flex justify-between items-center mb-3">
+                  <label className="text-sm font-semibold text-gray-700">
+                    Annuity Percentage:
+                  </label>
+                  <span className="bg-primary-600 text-white px-3 py-1 rounded-lg text-sm font-bold">
+                    {selectedAnnuity}%
+                  </span>
+                </div>
                 <input
                   type="range"
                   min="40"
                   max="100"
-                  step="10"
+                  step="1"
                   value={selectedAnnuity}
-                  onChange={(e) => setSelectedAnnuity(parseInt(e.target.value))}
+                  onChange={(e) => setParams({ ...params, annuityPercentage: parseInt(e.target.value) })}
                   className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-primary-600"
                 />
                 <div className="flex justify-between text-xs text-gray-400 mt-2">
@@ -757,39 +811,41 @@ const PensionSimulatorSection = ({ corpus, pensionSimulation, params, setParams 
 
           {/* Results */}
           <div className="space-y-4">
-            {selectedOption && (
-              <>
-                <div className="bg-gradient-to-br from-green-500 to-green-700 text-white rounded-2xl p-4 sm:p-6">
-                  <p className="text-green-100 text-sm font-medium mb-1">Monthly Pension</p>
-                  <p className="text-3xl sm:text-4xl font-bold">{formatCurrency(selectedOption.monthlyPension)}</p>
-                  <p className="text-green-200 text-sm mt-2">₹{(selectedOption.monthlyPension * 12).toLocaleString('en-IN')}/year</p>
-                </div>
+            <div className="bg-gradient-to-br from-green-600 to-green-700 text-white rounded-2xl p-4 sm:p-6 shadow-lg shadow-green-100">
+              <p className="text-green-100 text-sm font-medium mb-1">Monthly Pension</p>
+              <p className="text-3xl sm:text-4xl font-bold">{formatCurrency(monthlyPension)}</p>
+              <p className="text-green-200 text-sm mt-2">₹{Math.round(monthlyPension * 12).toLocaleString('en-IN')}/year</p>
+            </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white rounded-xl p-4 border border-gray-100">
-                    <p className="text-xs text-gray-500 font-medium mb-1">Annuity Amount</p>
-                    <p className="text-xl font-bold text-gray-800">{formatCurrency(selectedOption.annuityAmount, true)}</p>
-                  </div>
-                  <div className="bg-white rounded-xl p-4 border border-gray-100">
-                    <p className="text-xs text-gray-500 font-medium mb-1">Lump Sum</p>
-                    <p className="text-xl font-bold text-gray-800">{formatCurrency(selectedOption.lumpSum, true)}</p>
-                  </div>
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <p className="text-xs text-gray-500 font-medium mb-1">Annuity Amount</p>
+                <p className="text-xl font-bold text-gray-800">{formatCurrency(annuityAmount, true)}</p>
+              </div>
+              <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <p className="text-xs text-gray-500 font-medium mb-1">Lump Sum</p>
+                <p className="text-xl font-bold text-gray-800">{formatCurrency(lumpSum, true)}</p>
+              </div>
+            </div>
 
-                <div className="bg-blue-50 rounded-xl p-4">
-                  <p className="text-sm text-blue-800">{selectedOption.description}</p>
-                </div>
-              </>
-            )}
+            <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
+              <p className="text-sm text-blue-800 font-medium flex items-center gap-2">
+                <span className="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></span>
+                {getAnnuityDescription(selectedAnnuity)}
+              </p>
+            </div>
           </div>
         </div>
 
-        {/* All Options Comparison */}
+        {/* Comparison Table */}
         <div className="mt-8">
-          <h3 className="font-bold text-gray-800 mb-4">Compare All Options</h3>
-          <div className="overflow-x-auto">
+          <h3 className="font-bold text-gray-800 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-primary-600" />
+            Comparison at Major Milestones
+          </h3>
+          <div className="overflow-x-auto rounded-xl border border-gray-100">
             <table className="w-full text-sm">
-              <thead>
+              <thead className="bg-gray-50">
                 <tr className="border-b border-gray-200">
                   <th className="text-left py-3 px-4 font-semibold text-gray-600">Annuity %</th>
                   <th className="text-right py-3 px-4 font-semibold text-gray-600">Monthly Pension</th>
@@ -911,9 +967,20 @@ const MonteCarloSection = ({ results }) => {
             </div>
 
             {results.successProbability !== null && (
-              <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl p-4">
-                <p className="text-sm opacity-90">Probability of reaching your goal</p>
-                <p className="text-3xl font-bold">{results.successProbability.toFixed(1)}%</p>
+              <div className={cn(
+                "rounded-xl p-4 text-white",
+                results.successProbability >= 70 ? "bg-gradient-to-r from-green-500 to-green-600" :
+                results.successProbability >= 40 ? "bg-gradient-to-r from-orange-500 to-orange-600" :
+                "bg-gradient-to-r from-red-500 to-red-600"
+              )}>
+                <p className="text-sm opacity-90 font-medium">Probability of reaching your goal</p>
+                <div className="flex items-end gap-2">
+                  <p className="text-4xl font-black">{results.successProbability.toFixed(1)}%</p>
+                  <p className="text-xs font-bold mb-1 opacity-80 uppercase tracking-widest">
+                    {results.successProbability >= 70 ? 'High' : 
+                     results.successProbability >= 40 ? 'Moderate' : 'Critical'}
+                  </p>
+                </div>
               </div>
             )}
           </div>

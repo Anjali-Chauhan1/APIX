@@ -3,6 +3,7 @@ import User from '../models/User.js';
 import mongoose from 'mongoose';
 
 const demoUsers = new Map();
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-secret-change-in-production';
 
 const isDbConnected = () => mongoose.connection.readyState === 1;
 
@@ -14,7 +15,7 @@ export const protect = async (req, res, next) => {
       
             token = req.headers.authorization.split(' ')[1];
 
-            const decoded = jwt.verify(token, process.env.JWT_SECRET);
+            const decoded = jwt.verify(token, JWT_SECRET);
 
             // Handle demo users (ID starts with "demo_")
             if (!isDbConnected() || (typeof decoded.id === 'string' && decoded.id.startsWith('demo_'))) {
@@ -64,7 +65,7 @@ export const protect = async (req, res, next) => {
 
 
 export const generateToken = (id) => {
-    return jwt.sign({ id }, process.env.JWT_SECRET, {
+    return jwt.sign({ id }, JWT_SECRET, {
         expiresIn: process.env.JWT_EXPIRE || '7d'
     });
 };

@@ -66,6 +66,7 @@ export const register = async (req, res) => {
         }
 
         const normalizedEmail = String(email).toLowerCase().trim();
+        const safePassword = password != null ? String(password) : '';
 
         if (!isDbConnected()) {
             if (demoUsers.has(normalizedEmail)) {
@@ -75,31 +76,38 @@ export const register = async (req, res) => {
                 });
             }
 
-            const demoUser = {
-                _id: 'demo_' + Date.now(),
-                name,
-                email: normalizedEmail,
-                age: parsedAge,
-                monthlySalary: parsedMonthlySalary,
-                existingSavings: parsedExistingSavings,
-                monthlyNPSContribution: parsedMonthlyNPSContribution,
-                retirementAge: parsedRetirementAge,
-                riskProfile: riskProfile || 'moderate',
-                expectedSalaryGrowth: parsedExpectedSalaryGrowth,
-                desiredMonthlyPension: parsedDesiredMonthlyPension,
-                preferredLanguage: preferredLanguage || 'en'
-            };
+            try {
+                const demoUser = {
+                    _id: 'demo_' + Date.now(),
+                    name,
+                    email: normalizedEmail,
+                    age: parsedAge,
+                    monthlySalary: parsedMonthlySalary,
+                    existingSavings: parsedExistingSavings,
+                    monthlyNPSContribution: parsedMonthlyNPSContribution,
+                    retirementAge: parsedRetirementAge,
+                    riskProfile: riskProfile || 'moderate',
+                    expectedSalaryGrowth: parsedExpectedSalaryGrowth,
+                    desiredMonthlyPension: parsedDesiredMonthlyPension,
+                    preferredLanguage: preferredLanguage || 'en'
+                };
 
-            demoUsers.set(normalizedEmail, demoUser);
-            const token = generateToken(demoUser._id);
+                demoUsers.set(normalizedEmail, demoUser);
+                const token = generateToken(demoUser._id);
 
-            return res.status(201).json({
-                success: true,
-                message: 'User registered successfully (Demo Mode)',
-                data: { ...demoUser, token }
-            });
+                return res.status(201).json({
+                    success: true,
+                    message: 'User registered successfully (Demo Mode)',
+                    data: { ...demoUser, token }
+                });
+            } catch (demoErr) {
+                console.error('Register Demo Error:', demoErr);
+                return res.status(500).json({
+                    success: false,
+                    message: 'Registration failed in demo mode. Please try again.'
+                });
+            }
         }
-
 
         const userExists = await User.findOne({ email: normalizedEmail });
         if (userExists) {
@@ -112,7 +120,7 @@ export const register = async (req, res) => {
         const user = await User.create({
             name,
             email: normalizedEmail,
-            password,
+            password: safePassword,
             age: parsedAge,
             monthlySalary: parsedMonthlySalary,
             existingSavings: parsedExistingSavings,
@@ -121,7 +129,7 @@ export const register = async (req, res) => {
             riskProfile: riskProfile || 'moderate',
             expectedSalaryGrowth: parsedExpectedSalaryGrowth,
             desiredMonthlyPension: parsedDesiredMonthlyPension,
-            preferredLanguage: preferredLanguage || 'en'
+            preferredLanguage: (preferredLanguage && ['en', 'hi', 'bn', 'mr', 'te', 'ta', 'gu', 'kn', 'ml', 'pa', 'or', 'as', 'ur'].includes(preferredLanguage)) ? preferredLanguage : 'en'
         });
 
         if (user) {
@@ -269,13 +277,24 @@ export const login = async (req, res) => {
 
 export const getMe = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
-
+        // Demo users (no DB or id starts with 'demo_') – return in-memory user
+        const id = req.user?._id;
+        if (!isDbConnected() || (typeof id === 'string' && id.startsWith('demo_'))) {
+            return res.json({
+                success: true,
+                data: req.user
+            });
+        }
+        const user = await User.findById(id).select('-password');
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found' });
+        }
         res.json({
             success: true,
             data: user
         });
     } catch (error) {
+        console.error('GetMe Error:', error);
         res.status(500).json({
             success: false,
             message: 'Error fetching user profile'
@@ -285,8 +304,26 @@ export const getMe = async (req, res) => {
 
 export const updateProfile = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
+        const id = req.user?._id;
+        // Demo users – update in-memory only (no DB)
+        if (!isDbConnected() || (typeof id === 'string' && id.startsWith('demo_'))) {
+            const allowedUpdates = [
+                'name', 'age', 'monthlySalary', 'existingSavings', 'monthlyNPSContribution',
+                'retirementAge', 'riskProfile', 'expectedSalaryGrowth', 'desiredMonthlyPension',
+                'preferredLanguage', 'goals'
+            ];
+            const updated = { ...req.user, ...req.body };
+            allowedUpdates.forEach(field => {
+                if (req.body[field] !== undefined) updated[field] = req.body[field];
+            });
+            return res.json({
+                success: true,
+                message: 'Profile updated successfully (Demo)',
+                data: updated
+            });
+        }
 
+        const user = await User.findById(id);
         if (!user) {
             return res.status(404).json({
                 success: false,

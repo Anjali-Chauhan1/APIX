@@ -1,4 +1,5 @@
 import React from 'react';
+import LanguageSelector from './LanguageSelector';
 import ExportDropdown from './ExportDropdown';
 import { useAuthStore } from '../store/authStore';
 import { Bell, Search } from 'lucide-react';
@@ -26,6 +27,7 @@ const Header = () => {
           </button>
         </div>
         
+        <LanguageSelector />
         <ExportDropdown />
       </div>
     </header>

@@ -41,21 +41,17 @@ export const generateProjection = async (req, res) => {
             });
         }
 
-    
-        const realityShock = financialEngine.calculateRealityShock(
-            params.desiredMonthlyPension || projection.results.monthlyPension,
-            params.inflationRate,
-            params.retirementAge - params.age
-        );
+
+        const realityShock = projection.realityShock;
 
         const timeline = financialEngine.generateTimelineStory(params);
 
-     
+
         const pensionSimulation = financialEngine.calculateNPSPensionSimulation(
             projection.results.totalCorpus
         );
 
-       
+
         let projectionId = 'demo_' + Date.now();
         if (isDbConnected()) {
             const savedProjection = await Projection.create({
@@ -93,17 +89,17 @@ export const runMonteCarloSimulation = async (req, res) => {
         const user = req.user;
 
         const params = {
-            monthlyContribution: req.body.monthlyContribution || user.monthlyNPSContribution || 5000,
-            yearsToRetirement: (req.body.retirementAge || user.retirementAge || 60) - (user.age || 30),
+            monthlyContribution: Number(req.body.monthlyContribution) || user.monthlyNPSContribution || 5000,
+            yearsToRetirement: Math.max(0, (req.body.retirementAge || user.retirementAge || 60) - (req.body.currentAge || user.age || 30)),
             riskProfile: req.body.riskProfile || user.riskProfile || 'moderate',
-            salaryGrowth: req.body.salaryGrowth !== undefined ? req.body.salaryGrowth : (user.expectedSalaryGrowth || 8),
-            existingSavings: req.body.existingSavings !== undefined ? req.body.existingSavings : (user.existingSavings || 0),
-            targetCorpus: req.body.targetCorpus
+            salaryGrowth: req.body.salaryGrowth !== undefined ? Number(req.body.salaryGrowth) : (user.expectedSalaryGrowth || 8),
+            existingSavings: req.body.existingSavings !== undefined ? Number(req.body.existingSavings) : (user.existingSavings || 0),
+            targetCorpus: Number(req.body.targetCorpus)
         };
 
         const numSimulations = req.body.numSimulations || 1000;
 
-     
+
         const simulationResults = monteCarloEngine.runSimulation(params, numSimulations);
 
         if (isDbConnected()) {
@@ -168,7 +164,7 @@ export const generateScenarios = async (req, res) => {
 
 export const getProjectionHistory = async (req, res) => {
     try {
-      
+
         if (!isDbConnected()) {
             return res.json({
                 success: true,
@@ -312,12 +308,12 @@ export const pensionSimulator = async (req, res) => {
 
         const projection = financialEngine.generateProjection(params);
         const corpus = req.body.corpus || projection.results.totalCorpus;
-        
-      
+
+
         const annuityOptions = req.body.annuityOptions || [40, 50, 60, 70, 80, 90, 100];
         const simulation = financialEngine.calculateNPSPensionSimulation(corpus, annuityOptions);
 
-   
+
         const selectedPercentage = req.body.annuityPercentage || 40;
         const selectedOption = simulation.find(s => s.annuityPercentage === selectedPercentage) || simulation[0];
 
