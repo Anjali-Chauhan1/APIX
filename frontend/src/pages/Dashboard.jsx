@@ -312,81 +312,59 @@ const Dashboard = () => {
                     <Card.Title>Decision Playground</Card.Title>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
-                      <Slider
-                        label="Current Age"
-                        value={params.age}
-                        min={18}
-                        max={65}
-                        suffix=" Yrs"
-                        onChange={(val) => setParams({ ...params, age: val })}
-                      />
-                    </div>
-                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
-                      <Slider
-                        label="Monthly Contribution"
-                        value={params.monthlyNPSContribution}
-                        min={1000}
-                        max={100000}
-                        step={500}
-                        prefix="₹"
-                        onChange={(val) => setParams({ ...params, monthlyNPSContribution: val })}
-                      />
-                    </div>
-                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
-                      <Slider
-                        label="Retirement Age"
-                        value={params.retirementAge}
-                        min={40}
-                        max={70}
-                        suffix=" Yrs"
-                        onChange={(val) => setParams({ ...params, retirementAge: val })}
-                      />
-                    </div>
-                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
-                      <Slider
-                        label="Salary Growth"
-                        value={params.expectedSalaryGrowth}
-                        min={0}
-                        max={20}
-                        suffix="% p.a."
-                        onChange={(val) => setParams({ ...params, expectedSalaryGrowth: val })}
-                      />
-                    </div>
-                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
-                      <Slider
-                        label="Inflation Rate"
-                        value={params.inflationRate}
-                        min={3}
-                        max={10}
-                        suffix="% p.a."
-                        onChange={(val) => setParams({ ...params, inflationRate: val })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl">
-                      <Slider
-                        label="Annuity Purchase"
-                        value={params.annuityPercentage}
-                        min={40}
-                        max={100}
-                        suffix="%"
-                        onChange={(val) => setParams({ ...params, annuityPercentage: val })}
-                      />
-                    </div>
-                    
-                    <div className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl flex flex-col justify-center space-y-4">
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500 font-medium text-xs uppercase tracking-wider">Estimated Corpus</span>
-                        <span className="font-bold text-primary-600 text-lg">{formatCurrency(results.totalCorpus, true)}</span>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {[
+                      { label: "Current Age", key: "age", min: 18, max: 65, suffix: " Yrs" },
+                      { label: "Monthly Contribution", key: "monthlyNPSContribution", min: 1000, max: 100000, step: 500, prefix: "₹" },
+                      { label: "Retirement Age", key: "retirementAge", min: 40, max: 70, suffix: " Yrs" },
+                      { label: "Salary Growth", key: "expectedSalaryGrowth", min: 0, max: 20, suffix: "% p.a." },
+                      { label: "Inflation Rate", key: "inflationRate", min: 3, max: 10, suffix: "% p.a." },
+                      { label: "Annuity Purchase", key: "annuityPercentage", min: 40, max: 100, suffix: "%" }
+                    ].map((item) => (
+                      <div key={item.key} className="bg-white border border-primary-100 shadow-sm p-4 rounded-xl hover:border-primary-200 transition-all">
+                        <Slider
+                          label={item.label}
+                          value={params[item.key]}
+                          min={item.min}
+                          max={item.max}
+                          step={item.step}
+                          prefix={item.prefix}
+                          suffix={item.suffix}
+                          onChange={(val) => setParams({ ...params, [item.key]: val })}
+                        />
                       </div>
-                      <div className="border-t border-gray-50"></div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-gray-500 font-medium text-xs uppercase tracking-wider">Monthly Pension</span>
-                        <span className="font-bold text-green-600 text-lg">{formatCurrency(results.monthlyPension)}</span>
+                    ))}
+
+                    {/* Highly Visible Results Card */}
+                    <div className="md:col-span-2 lg:col-span-3 bg-gradient-to-br from-primary-600 to-primary-800 rounded-2xl p-6 shadow-xl relative overflow-hidden mt-2">
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full -mr-32 -mt-32 blur-3xl"></div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-8 relative z-10">
+                        <div className="space-y-1">
+                          <p className="text-primary-100 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+                            <Wallet className="w-3 h-3" />
+                            Estimated Corpus at Retirement
+                          </p>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-3xl sm:text-4xl font-black text-white">{formatCurrency(results?.totalCorpus, true)}</span>
+                            <span className="text-primary-200 text-xs font-bold">@ Age {params.retirementAge}</span>
+                          </div>
+                        </div>
+                        <div className="space-y-1 sm:border-l sm:border-white/10 sm:pl-8">
+                          <p className="text-primary-100 text-[10px] font-bold uppercase tracking-widest flex items-center gap-2">
+                            <TrendingUp className="w-3 h-3 text-green-400" />
+                            Expected Monthly Pension
+                          </p>
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-3xl sm:text-4xl font-black text-white">{formatCurrency(results?.monthlyPension)}</span>
+                            <span className="text-primary-100/50 text-[10px] font-bold">(Inflation Adjusted)</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Live calculation indicator */}
+                      <div className="absolute top-4 right-4 flex items-center gap-1.5 bg-white/10 backdrop-blur-md px-2 py-1 rounded-full border border-white/10">
+                        <div className="w-1.5 h-1.5 bg-green-400 rounded-full animate-pulse"></div>
+                        <span className="text-[10px] font-bold text-white/80 uppercase tracking-tighter">Live Updates</span>
                       </div>
                     </div>
                   </div>
@@ -440,24 +418,23 @@ const Dashboard = () => {
                         strokeWidth="12"
                         fill="transparent"
                         strokeDasharray={471}
-                        initial={{ strokeDashoffset: 471 }}
-                        animate={{ strokeDashoffset: 471 - (471 * results.retirementReadinessScore) / 100 }}
+                        animate={{ strokeDashoffset: 471 - (471 * (results.retirementReadinessScore || 0)) / 100 }}
                         transition={{ duration: 1.5, ease: "easeOut" }}
                         className={cn(getReadinessColor(results.retirementReadinessScore))}
                         strokeLinecap="round"
                       />
                     </svg>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                      <span className="text-4xl font-black">{results.retirementReadinessScore}%</span>
+                      <span className="text-4xl font-black">{results.retirementReadinessScore || 0}%</span>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-gray-400 mt-1">Ready</span>
                     </div>
                   </div>
                   <div className={cn(
-                    "mt-6 px-5 py-2.5 rounded-full text-sm font-bold shadow-lg",
-                    getReadinessBgColor(results.retirementReadinessScore),
-                    "text-white"
+                    "mt-6 px-5 py-2.5 rounded-full text-sm font-bold shadow-lg text-white transition-colors duration-500",
+                    getReadinessBgColor(results.retirementReadinessScore)
                   )}>
-                    {results.riskLevel?.toUpperCase()} RISK
+                    {(results.retirementReadinessScore < 40 ? 'HIGH' : 
+                      results.retirementReadinessScore <= 75 ? 'MODERATE' : 'LOW')} RISK
                   </div>
                 </Card>
 
@@ -466,11 +443,11 @@ const Dashboard = () => {
 
                   {/* Reality Shock Meter 🚨 */}
                   <Card className={cn(
-                    "relative overflow-hidden",
-                    realityShock?.riskLevel === 'high' ? "bg-gradient-to-br from-red-600 to-red-800" :
-                      realityShock?.riskLevel === 'moderate' ? "bg-gradient-to-br from-orange-500 to-orange-700" :
+                    "relative overflow-hidden transition-all duration-500",
+                    results.retirementReadinessScore < 40 ? "bg-gradient-to-br from-red-600 to-red-800" :
+                      results.retirementReadinessScore <= 75 ? "bg-gradient-to-br from-orange-500 to-orange-700" :
                         "bg-gradient-to-br from-green-600 to-green-800",
-                    "text-white border-0"
+                    "text-white border-0 shadow-lg"
                   )}>
                     <div className="absolute top-0 right-0 opacity-10">
                       <AlertTriangle className="w-32 h-32 -mt-8 -mr-8" />
@@ -486,10 +463,13 @@ const Dashboard = () => {
                     <div className="bg-white/20 rounded-xl p-3 flex items-center gap-3">
                       <div className={cn(
                         "w-3 h-3 rounded-full animate-pulse",
-                        realityShock?.riskLevel === 'high' ? "bg-red-300" :
-                          realityShock?.riskLevel === 'moderate' ? "bg-orange-300" : "bg-green-300"
+                        results.retirementReadinessScore < 40 ? "bg-red-300" :
+                          results.retirementReadinessScore <= 75 ? "bg-orange-300" : "bg-green-300"
                       )}></div>
-                      <span className="text-sm font-bold uppercase">{realityShock?.riskLevel} Risk</span>
+                      <span className="text-sm font-bold uppercase">
+                        {(results.retirementReadinessScore < 40 ? 'HIGH' : 
+                          results.retirementReadinessScore <= 75 ? 'MODERATE' : 'LOW')} RISK
+                      </span>
                     </div>
                   </Card>
 
@@ -855,7 +835,7 @@ const MonteCarloSection = ({ results }) => {
           {/* Chart */}
           <div className="h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} layout="vertical">
+              <BarChart data={chartData} layout="vertical" margin={{ left: 20 }}>
                 <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} />
                 <XAxis
                   type="number"
@@ -866,7 +846,7 @@ const MonteCarloSection = ({ results }) => {
                 <YAxis
                   type="category"
                   dataKey="name"
-                  width={80}
+                  width={130}
                   axisLine={false}
                   tickLine={false}
                   tick={{ fontSize: 12 }}

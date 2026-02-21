@@ -53,7 +53,7 @@ export const generateProjection = async (req, res) => {
 
 
         let projectionId = 'demo_' + Date.now();
-        if (isDbConnected()) {
+        if (isDbConnected() && mongoose.Types.ObjectId.isValid(user._id)) {
             const savedProjection = await Projection.create({
                 userId: user._id,
                 projectionType: 'standard',
@@ -102,7 +102,7 @@ export const runMonteCarloSimulation = async (req, res) => {
 
         const simulationResults = monteCarloEngine.runSimulation(params, numSimulations);
 
-        if (isDbConnected()) {
+        if (isDbConnected() && mongoose.Types.ObjectId.isValid(user._id)) {
             await Projection.create({
                 userId: user._id,
                 projectionType: 'monte-carlo',
@@ -165,7 +165,7 @@ export const generateScenarios = async (req, res) => {
 export const getProjectionHistory = async (req, res) => {
     try {
 
-        if (!isDbConnected()) {
+        if (!isDbConnected() || !mongoose.Types.ObjectId.isValid(req.user?._id)) {
             return res.json({
                 success: true,
                 data: []

@@ -144,19 +144,31 @@ class FinancialEngine {
      * Calculate retirement readiness score
      * Compares predicted corpus with inflation-adjusted required corpus for desired lifestyle
      */
-    calculateReadinessScore(predictedCorpus, desiredMonthlyPension, annuityRate = 6.5, inflationRate = 0, years = 0) {
+    calculateReadinessScore(params) {
+        const {
+            predictedCorpus,
+            desiredMonthlyPension,
+            annuityRate = 6.5,
+            inflationRate = 6.0,
+            yearsToRetirement = 0,
+            annuityPercentage = 40
+        } = params;
+
         // Use a default pension goal if none provided
-        const targetPension = desiredMonthlyPension || 50000;
+        const targetPensionCurrent = desiredMonthlyPension || 50000;
 
-        // Inflation-adjust the pension goal to maintain purchasing power
-        const inflationAdjustedGoal = targetPension * Math.pow(1 + (inflationRate / 100), years);
+        // 1. Inflation-adjust the pension goal to maintain purchasing power at retirement
+        const targetPensionFuture = targetPensionCurrent * Math.pow(1 + (inflationRate / 100), yearsToRetirement);
 
-        // Calculate required corpus for inflation-adjusted pension
-        const requiredCorpus = (inflationAdjustedGoal * 12) / (annuityRate / 100);
+        // 2. Calculate required corpus to generate THIS future pension
+        // Pension = Corpus * (Annuity% / 100) * (AnnuityRate / 100) / 12
+        // RequiredCorpus = (Pension * 12) / (AnnuityRate / 100) / (Annuity% / 100)
+        const annuityFactor = (annuityPercentage / 100) * (annuityRate / 100);
+        const requiredCorpus = (targetPensionFuture * 12) / annuityFactor;
 
         if (requiredCorpus <= 0) return 100;
 
-        // Calculate readiness score
+        // 3. Calculate readiness score
         const score = Math.min((predictedCorpus / requiredCorpus) * 100, 100);
 
         return Math.round(score) || 0;
@@ -166,9 +178,18 @@ class FinancialEngine {
      * Determine risk level based on readiness score
      */
     getRiskLevel(readinessScore) {
-        if (readinessScore < 40) return 'high';
-        if (readinessScore < 70) return 'moderate';
-        return 'low';
+        const score = Math.round(readinessScore || 0);
+
+        // High Risk: 0% to 39%
+        if (score < 40) return 'high';
+
+        // Moderate Risk: 40% to 75%
+        if (score >= 40 && score <= 75) return 'moderate';
+
+        // Low Risk: 76% to 100%
+        if (score > 75) return 'low';
+
+        return 'low'; // Default fallback
     }
 
     /**
@@ -270,38 +291,29 @@ class FinancialEngine {
             yearsToRetirement
         );
 
-        // 1. Calculate Reality Shock first to get inflation risk
+        // 2. Calculate Readiness Score (Holistic & Inflation-Aware)
+        const readinessScore = this.calculateReadinessScore({
+            predictedCorpus: corpusData.totalCorpus,
+            desiredMonthlyPension,
+            annuityRate: this.assumptions.annuityRate.default,
+            inflationRate,
+            yearsToRetirement,
+            annuityPercentage
+        });
+
+        // 3. Determine Unified risk level (Source of Truth)
+        // Primary driver is readiness score - strictly follow the 40/70 thresholds
+        const unifiedRisk = this.getRiskLevel(readinessScore);
+
+        // 4. Calculate Reality Shock (how much inflation hurts)
         const realityShock = this.calculateRealityShock(
             desiredMonthlyPension || npsBreakdown.monthlyPension,
             inflationRate,
-            yearsToRetirement
+            yearsToRetirement,
+            readinessScore
         );
 
-        // 2. Calculate Readiness Score (Inflation-Aware)
-        const readinessScore = this.calculateReadinessScore(
-            corpusData.totalCorpus,
-            desiredMonthlyPension,
-            this.assumptions.annuityRate.default,
-            inflationRate,
-            yearsToRetirement
-        );
-
-        // 3. Determine Unified risk level (Source of Truth)
-        let unifiedRisk = this.getRiskLevel(readinessScore);
-
-        // If the user is >90% ready, they have accounted for the shock, so it's Low Risk
-        if (readinessScore >= 90) {
-            unifiedRisk = 'low';
-        } else {
-            // Otherwise, if inflation shock is high, elevate the risk
-            if (realityShock.riskLevel === 'high') {
-                unifiedRisk = 'high';
-            } else if (realityShock.riskLevel === 'moderate' && unifiedRisk === 'low') {
-                unifiedRisk = 'moderate';
-            }
-        }
-
-        // Apply unified risk back to reality shock for consistency
+        // The risk message and color are now tied directly to the readiness score
         realityShock.riskLevel = unifiedRisk;
         realityShock.riskColor = unifiedRisk === 'high' ? '#DC2626' : (unifiedRisk === 'moderate' ? '#F59E0B' : '#16A34A');
 
@@ -344,43 +356,34 @@ class FinancialEngine {
      * Calculate reality shock - inflation adjusted pension need
      */
     calculateRealityShock(currentPensionNeed, inflationRate, yearsToRetirement, readinessScore) {
+        if (!currentPensionNeed) {
+            return {
+                currentNeed: 0,
+                futureNeed: 0,
+                multiplier: 1,
+                riskLevel: 'low',
+                riskColor: '#16A34A',
+                message: 'Set a desired pension to see inflation impact'
+            };
+        }
         const futureValue = currentPensionNeed * Math.pow(1 + inflationRate / 100, yearsToRetirement);
 
         // Determine multiplier
         const multiplier = futureValue / currentPensionNeed;
 
-        // Base risk level on inflation multiplier
-        let riskLevel = 'low';
-        if (multiplier > 2.5) {
-            riskLevel = 'high';
-        } else if (multiplier > 1.7) {
-            riskLevel = 'moderate';
-        }
+        // Multiplier risk is now handled by readiness score in generateProjection
+        const riskLevel = 'low';
 
-        // Holistic risk: If readiness is low, the overall reality is high risk
-        if (readinessScore !== undefined) {
-            if (readinessScore < 40) {
-                riskLevel = 'high';
-            } else if (readinessScore < 70 && riskLevel !== 'high') {
-                riskLevel = 'moderate';
-            }
-        }
-
-        // Set risk color based on final riskLevel
-        const riskColors = {
-            high: '#DC2626', // Red
-            moderate: '#F59E0B', // Orange
-            low: '#16A34A' // Green
-        };
-        const riskColor = riskColors[riskLevel] || '#16A34A';
+        // Set risk color based on default (will be overridden by generateProjection)
+        const riskColor = '#16A34A';
 
         return {
-            currentNeed: Math.round(currentPensionNeed),
-            futureNeed: Math.round(futureValue),
+            currentNeed: Math.round(currentPensionNeed || 0),
+            futureNeed: Math.round(futureValue || 0),
             multiplier: multiplier.toFixed(2),
             riskLevel,
             riskColor,
-            message: `₹${currentPensionNeed.toLocaleString('en-IN')} today = ₹${Math.round(futureValue).toLocaleString('en-IN')} in ${yearsToRetirement} years`
+            message: `₹${(currentPensionNeed || 0).toLocaleString('en-IN')} today = ₹${Math.round(futureValue || 0).toLocaleString('en-IN')} in ${yearsToRetirement || 0} years`
         };
     }
 

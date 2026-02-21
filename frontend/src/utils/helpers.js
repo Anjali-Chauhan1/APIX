@@ -49,13 +49,13 @@ export function getRiskColor(riskLevel) {
 }
 
 export function getReadinessColor(score) {
-    if (score >= 70) return 'text-green-600';
+    if (score >= 76) return 'text-green-600';
     if (score >= 40) return 'text-orange-600';
     return 'text-red-600';
 }
 
 export function getReadinessBgColor(score) {
-    if (score >= 70) return 'bg-green-500';
+    if (score >= 76) return 'bg-green-500';
     if (score >= 40) return 'bg-orange-500';
     return 'bg-red-500';
 }

@@ -7,7 +7,7 @@ const demoUsers = new Map();
 
 const isDbConnected = () => mongoose.connection.readyState === 1;
 
-export const register = async (req, res) => {
+export const register = async (req, res, next) => {
     console.log('📝 Registration attempt for:', req.body?.email);
     try {
         const {
@@ -133,6 +133,7 @@ export const register = async (req, res) => {
         });
 
         if (user) {
+            console.log('✅ User registered successfully:', user.email);
             const token = generateToken(user._id);
 
             res.status(201).json({
@@ -158,36 +159,12 @@ export const register = async (req, res) => {
             });
         }
     } catch (error) {
-        console.error('Register Error FULL:', error);
-
-        if (error?.code === 11000) {
-            return res.status(409).json({
-                success: false,
-                message: 'User already exists with this email'
-            });
-        }
-
-        if (error?.name === 'ValidationError') {
-            const validationMessage = Object.values(error.errors || {})
-                .map((e) => e.message)
-                .join(', ');
-            return res.status(400).json({
-                success: false,
-                message: validationMessage || 'Invalid registration data',
-                error: error.name
-            });
-        }
-
-        res.status(500).json({
-            success: false,
-            message: error.message || 'Error registering user',
-            error: error.name // Add error name for easier debugging
-        });
+        next(error);
     }
 };
 
 
-export const login = async (req, res) => {
+export const login = async (req, res, next) => {
     try {
         const { email, password } = req.body;
         const normalizedEmail = String(email || '').toLowerCase().trim();
@@ -267,15 +244,11 @@ export const login = async (req, res) => {
             }
         });
     } catch (error) {
-        console.error('Login Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error logging in'
-        });
+        next(error);
     }
 };
 
-export const getMe = async (req, res) => {
+export const getMe = async (req, res, next) => {
     try {
         // Demo users (no DB or id starts with 'demo_') – return in-memory user
         const id = req.user?._id;
@@ -294,15 +267,11 @@ export const getMe = async (req, res) => {
             data: user
         });
     } catch (error) {
-        console.error('GetMe Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error fetching user profile'
-        });
+        next(error);
     }
 };
 
-export const updateProfile = async (req, res) => {
+export const updateProfile = async (req, res, next) => {
     try {
         const id = req.user?._id;
         // Demo users – update in-memory only (no DB)
@@ -360,10 +329,6 @@ export const updateProfile = async (req, res) => {
             data: user
         });
     } catch (error) {
-        console.error('Update Profile Error:', error);
-        res.status(500).json({
-            success: false,
-            message: 'Error updating profile'
-        });
+        next(error);
     }
 };

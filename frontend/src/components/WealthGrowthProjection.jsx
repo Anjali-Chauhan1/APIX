@@ -124,7 +124,6 @@ const WealthGrowthProjection = () => {
         <div className="flex flex-col sm:flex-row justify-between items-start gap-2 sm:gap-0 p-2 sm:p-6">
           <div>
             <h2 className="text-lg sm:text-2xl font-bold text-blue-900 leading-tight">Wealth Growth Projection</h2>
-            <p className="text-blue-600 mt-1 text-xs sm:text-base">Your corpus growth over time in 3D visualization</p>
           </div>
           <button
             className="flex items-center gap-2 bg-white bg-opacity-70 backdrop-blur-md px-2 py-1 sm:px-4 sm:py-2 rounded-full shadow border border-blue-200 transition hover:bg-blue-50 text-xs sm:text-base"

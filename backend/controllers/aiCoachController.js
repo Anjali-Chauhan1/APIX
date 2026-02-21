@@ -32,9 +32,9 @@ export const chat = async (req, res) => {
 
         const projection = financialEngine.generateProjection(userProfile);
 
-        if (!isDbConnected()) {
+        if (!isDbConnected() || !mongoose.Types.ObjectId.isValid(user._id)) {
             const aiResponse = await aiCoach.getResponse(message, userProfile, projection, []);
-            
+
             return res.json({
                 success: true,
                 data: {
@@ -128,10 +128,10 @@ export const getInsights = async (req, res) => {
 
         const projection = financialEngine.generateProjection(userProfile);
 
-       
+
         const insights = await aiCoach.generateInsights(userProfile, projection);
 
-       
+
         let contributionGap = null;
         if (userProfile.desiredMonthlyPension) {
             contributionGap = financialEngine.calculateContributionGap({
@@ -166,7 +166,7 @@ export const getChatHistory = async (req, res) => {
     try {
         const { sessionId } = req.params;
 
-        if (!isDbConnected()) {
+        if (!isDbConnected() || !mongoose.Types.ObjectId.isValid(req.user?._id)) {
             return res.json({
                 success: true,
                 data: {
